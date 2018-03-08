@@ -83,8 +83,8 @@ systemctl start snake      # Snake
 
 # Examples
 
-Snake is a RESTful API so the examples below are not pretty, if that happens to be a requirement (see [snake-skin](https://github.com/countercept/snake-skin)).
-As these examples only scratch the surface, for a complete summary of the API (see [API](https://github.com/countercept/snake-core/wiki/api)).
+Snake is a RESTful API so the examples below are not pretty, if that happens to be a requirement take a look at Snake Skin (see [snake-skin](https://github.com/countercept/snake-skin)).
+As these examples only scratch the surface, for a complete summary of the API take a look at the API documentation (see [API](https://github.com/countercept/snake-core/wiki/api)).
 
 ## Submitting a File
 
