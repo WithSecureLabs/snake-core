@@ -1,0 +1,3 @@
+[flake8]
+# We really don't care about lines being too long!
+ignore = E501

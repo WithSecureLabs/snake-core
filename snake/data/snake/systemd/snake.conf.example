@@ -1,0 +1,9 @@
+# Configuration for Snake Service
+
+# User and group to run as
+SNAKE_USER="snaked"
+SNAKE_GROUP="snaked"
+
+# Absolute or relative path to the 'snaked' command:
+#SNAKED_BIN="/virtualenvs/<def>/bin/snaked"
+SNAKED_BIN="/usr/local/bin/snaked"

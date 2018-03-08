@@ -1,0 +1,22 @@
+# Celery Configuration for Snake
+
+# User and group to run as
+CELERY_USER="snaked"
+CELERY_GROUP="snaked"
+
+# Name of nodes to start
+# CELERYD_NODES="w1 w2 w3 w4"
+CELERYD_NODES="w1"
+
+# Absolute or relative path to the 'celery' command:
+#CELERY_BIN="/virtualenvs/<def>/bin/celery"
+CELERY_BIN="/usr/local/bin/celery"
+
+# Extra command-line arguments to the worker
+CELERYD_OPTS="--concurrency=8"
+
+# - %n will be replaced with the first part of the nodename.
+# - %I will be replaced with the current child process index
+#   and is important when using the prefork pool to avoid race conditions.
+CELERYD_LOG_FILE="/var/log/snake-pit/%n%I.log"
+CELERYD_LOG_LEVEL="INFO"

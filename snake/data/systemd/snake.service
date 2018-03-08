@@ -1,0 +1,14 @@
+[Unit]
+Description=Snake Server Daemon
+After=network.target
+
+[Service]
+User=snaked
+Group=snaked
+RuntimeDirectory=snake
+EnvironmentFile=/etc/snake/systemd/snake.conf
+ExecStart=/bin/sh -c '${SNAKED_BIN} --pidfile=/var/run/snake/snake.pid'
+PIDFile=/var/run/snake/snake.pid
+
+[Install]
+WantedBy=multi-user.target

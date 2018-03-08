@@ -1,0 +1,21 @@
+[Unit]
+Description=Snake Workers Daemon
+After=network.target
+
+[Service]
+Type=forking
+User=snaked
+Group=snaked
+RuntimeDirectory=snake-pit
+EnvironmentFile=/etc/snake/systemd/snake-pit.conf
+ExecStart=/bin/sh -c '${CELERY_BIN} multi start ${CELERYD_NODES} \
+  -A snake.worker --pidfile=/var/run/snake-pit/%n.pid \
+  --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
+ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait ${CELERYD_NODES} \
+  --pidfile=/var/run/snake-pit/%n.pid'
+ExecReload=/bin/sh -c '${CELERY_BIN} multi restart ${CELERYD_NODES} \
+  -A snake.worker --pidfile=/var/run/snake-pit/%n.pid \
+  --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}'
+
+[Install]
+WantedBy=multi-user.target
