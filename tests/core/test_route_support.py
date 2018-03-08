@@ -177,6 +177,9 @@ async def test_store_file(mocker):
         def create(*args, **kwargs):  # pylint: disable=unused-argument, no-method-argument, no-self-use
             return False
 
+        def save(*args, **kwargs):  # pylint: disable=unused-argument, no-method-argument, no-self-use
+            return False
+
     class AsyncFileCollection:
         # XXX: Don't add self it breaks the mocks?!
         async def insert(data):  # pylint: disable=unused-argument, no-self-argument
