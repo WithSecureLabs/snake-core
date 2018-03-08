@@ -33,7 +33,7 @@ class Commands(scale.Commands):
     def interesting(self, args, file, opts):
         strings = str(subprocess.check_output(["strings", file.file_path]), encoding="utf-8").split('\n')
         # TODO: Review the regexes associated with interesting strings
-        output = ''
+        output = []
         for string in strings:
             if regex.IPV4_REGEX.search(string):
                 output += [string + ' (IPV4_REGEX)']
