@@ -14,6 +14,7 @@ Examples:
 
 import argparse
 import imp
+import os
 from os import path
 import shutil
 import subprocess
@@ -72,6 +73,8 @@ def install(scales):
         scale_path = imp.find_module('snake_{}'.format(scale))[1]
         if path.exists(path.join(scale_path, '{}.conf'.format(scale))):
             scales_dir = path.join(constants.ETC_DIR, 'scales')
+            if not path.exists(scales_dir):
+                os.makedirs(scales_dir, exist_ok=True)
             shutil.copy(path.join(scale_path, '{}.conf'.format(scale)), path.join(scales_dir, '{}.conf.example'.format(scale)))
             if not path.exists(path.join(scales_dir, '{}.conf'.format(scale))):
                 shutil.copy(path.join(scales_dir, '{}.conf.example'.format(scale)), path.join(scales_dir, '{}.conf'.format(scale)))
