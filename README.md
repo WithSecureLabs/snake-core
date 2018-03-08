@@ -8,7 +8,7 @@ That being said there will be times where the information provided by Snake is m
 It is a Python based application built on top of Tornado and MongoDB.
 Scales provide Snake with a variety of functionality from static analysis through to interaction with external services.
 
-For more information, please see: [Wiki](https://github.com/countercept/snake/wiki)
+For more information, please see: [Wiki](https://github.com/countercept/snake-core/wiki)
 
 # Dependencies
 
@@ -83,8 +83,8 @@ systemctl start snake      # Snake
 
 # Examples
 
-Snake is a RESTful API so the examples below are not pretty, if that happens to be a requirement see [snake-skin](https://github.com/countercept/snake-skin).
-As these examples only scratch the surface, for a complete summary of the API see [API]().
+Snake is a RESTful API so the examples below are not pretty, if that happens to be a requirement (see [snake-skin](https://github.com/countercept/snake-skin)).
+As these examples only scratch the surface, for a complete summary of the API see ([API](https://github.com/countercept/snake-core/wiki/api)).
 
 ## Submitting a File
 
