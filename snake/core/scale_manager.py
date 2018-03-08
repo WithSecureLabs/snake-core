@@ -98,7 +98,7 @@ class ScaleManager():
 
         # Pip
         for entry_point in pkg_resources.iter_entry_points(group='snake.scales'):
-            if isinstance(scales, list) and entry_point.module_name not in scales:
+            if isinstance(scales, list) and entry_point.name not in scales:
                 continue
             loader = pkgutil.get_loader(entry_point.module_name)
             self.__load_scale(entry_point.name, loader.path)

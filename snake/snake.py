@@ -19,13 +19,15 @@ import shutil
 import subprocess
 import sys
 
+import pkg_resources
+
 from snake.config import constants
 from snake.core import scale_manager as sm
 
 # pylint: disable=missing-docstring
 
 
-DEFAULT_REPO = "git+https://github.com/countercept/snake-scales"
+DEFAULT_REPO = "git+https://github.com/countercept/snake-scales#subdirectory="
 
 
 def check(scale):
@@ -33,9 +35,9 @@ def check(scale):
     scale_manager = sm.ScaleManager([])
     scale_manager._ScaleManager__load_scales([scale])  # pylint: disable=no-member, protected-access
     if scale not in scale_manager.scales:
-        print("Scale not loaded: {}".format(scale))
+        print("Scale not loadable: {}".format(scale))
     else:
-        print("Scale loaded: {}".format(scale))
+        print("Scale loadable: {}".format(scale))
 
 
 def install(scales):
@@ -48,17 +50,23 @@ def install(scales):
     # Pre process
     scales_ = []
     for scale in scales:
-        if len(scale.rsplit('/', 1)) > 1:
-            scales_ += [scale.rsplit('/', 1)]
+        # TODO: Make robust cater for all scenarios
+        if len(scale.rsplit('=', 1)) > 1:  # XXX: Handle subdirectory, don't assume it is last arg!
+            r, s = scale.rsplit('=', 1)  # pylint: disable=invalid-name
+            scales_ += [("{}=".format(r), s)]
+        elif len(scale.rsplit('/', 1)) > 1:
+            r, s = scale.rsplit('/', 1)  # pylint: disable=invalid-name
+            scales_ += [("{}/".format(r), s)]
         else:
             scales_ += [(DEFAULT_REPO, scale)]
 
     # Install scales
     for repo, scale in scales_:  # pylint: disable=invalid-name
         print("Installing: {}".format(scale))
-        proc = subprocess.run([pip3, 'install', '{}/{}'.format(repo, scale)])
+        proc = subprocess.run([pip3, 'install', '{}{}'.format(repo, scale)])
         if proc.returncode:
             print("Failed to install: {}".format(scale))
+            sys.exit(1)
 
         # Copy config if present
         scale_path = imp.find_module('snake_{}'.format(scale))[1]
@@ -68,9 +76,11 @@ def install(scales):
             if not path.exists(path.join(scales_dir, '{}.conf'.format(scale))):
                 shutil.copy(path.join(scales_dir, '{}.conf.example'.format(scale)), path.join(scales_dir, '{}.conf'.format(scale)))
 
+    # Reload pkg_resources
+    imp.reload(pkg_resources)
+
     # Check installed scales
-    for _repo, scale in scales:
-        print("Checking: {}".format(scale))
+    for _repo, scale in scales_:
         check(scale)
 
 
