@@ -66,6 +66,9 @@ class UploadFileHandler(snake_handler.StreamHandler):
             if data['name'] == self.request.files['file'][0]['filename']:
                 data['name'] = path.basename(f_path)
 
+        # Set submission type
+        data['submission_type'] = 'upload:file'
+
         # Hash the file
         sha2 = hashlib.sha256()
         with open(f_path, 'rb') as f:
@@ -140,6 +143,9 @@ class UploadFilesHandler(snake_handler.StreamHandler):
         documents = []
         i = 0
         for d in data:  # pylint: disable=invalid-name
+            # Set submission type
+            d['submission_type'] = 'upload:file'
+
             # Get the files offset and size
             f_path = self.request.files['files[]'][i]['body'].decode('utf-8')
 
@@ -199,6 +205,9 @@ class UploadMemoryHandler(snake_handler.StreamHandler):
             # Update name if not overriden
             if data['name'] == self.request.files['file'][0]['filename']:
                 data['name'] = path.basename(f_path)
+
+        # Set submission type
+        data['submission_type'] = 'upload:memory'
 
         # Hash the file
         sha2 = hashlib.sha256()

@@ -35,7 +35,7 @@ setup(
     entry_points={
         'console_scripts': [
             'snaked = snake.snaked:__main__',
-            'snake = snake.snake:main'
+            'snake = snake.snake_utility:main'
         ]
     },
 

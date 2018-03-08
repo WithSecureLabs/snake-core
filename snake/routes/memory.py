@@ -62,7 +62,7 @@ class MemoryHandler(snake_handler.SnakeHandler):
             return
         data = escape.json_decode(self.request.body)
         data = schema.FileSchema(only=('description', 'name', 'tags'), partial=True).load(data)
-        data = schema.FileSchema().dump(data)
+        data = schema.FileSchema(only=('description', 'name', 'tags')).dump(data)
         if data.keys():
             await db.async_file_collection.update(sha256_digest, data)
         document = await db.async_file_collection.select(sha256_digest)
@@ -88,7 +88,7 @@ class MemoryHandler(snake_handler.SnakeHandler):
         if 'tags' not in data.keys():
             data['tags'] = ''
         data = schema.FileSchema(only=('description', 'name', 'tags'), partial=True).load(data)
-        data = schema.FileSchema().dump(data)
+        data = schema.FileSchema(only=('description', 'name', 'tags')).dump(data)
         await db.async_file_collection.update(sha256_digest, data)
         document = await db.async_file_collection.select(sha256_digest)
         document = schema.FileSchema().dump(schema.FileSchema().load(document))

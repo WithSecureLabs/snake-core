@@ -1,5 +1,6 @@
 """The file storage module."""
 
+import hashlib
 import os
 from os import path
 import shutil
@@ -47,53 +48,60 @@ class FileStorage():
             'size': self.size
         }
 
-    def save(self):
+    def save(self, move=False):
         """Save storage file.
 
         This will only save the file if the paths don't match. It will only
         save by copying so the original file remains intact.
 
-        Returns:
-            bool: True on success, False on failure.
-        """
-        # NOTE: A create does the copying, should we not be moving instead?
-        # Currently we can just couple it with delete.
-        # Only save if the path does NOT match
-        true_path = self.path()
-        if self.path == true_path:
-            return True
-        directory, _ = path.split(true_path)
-        os.makedirs(directory, exist_ok=True)
-        if not shutil.copy(self.file_path, true_path):
-            return False
-        self.file_path = true_path
-        return True
-
-    def create(self, sha256_digest, file_path, move=False):
-        """Create storage file.
-
-        This function is used to create a file and should only be called on a
-        clean FileStorage instance. It will copy/move a file into snake's file
-        database.
-
         Args:
-            sha256_digest (str): The hash for the file.
-            file_path (str): The path to the file.
             move (bool, optional): Whether to move or just copy the file.
                 Defaults to False.
 
         Returns:
             bool: True on success, False on failure.
         """
-        self.sha256_digest = sha256_digest
-        self.file_path = self.path()
-        os.makedirs(self.directory(), exist_ok=True)
+        # Only save if the path does NOT match
+        true_path = self.path()
+        if self.file_path == true_path:
+            return True
+        directory, _ = path.split(true_path)
+        os.makedirs(directory, exist_ok=True)
         if move:
-            if not shutil.move(file_path, self.file_path):
+            if not shutil.move(self.file_path, true_path):
                 return False
         else:
-            if not shutil.copy(file_path, self.file_path):
+            if not shutil.copy(self.file_path, true_path):
                 return False
+        self.file_path = true_path
+        return True
+
+    def create(self, file_path, sha256_digest=None):
+        """Create storage file.
+
+        This function is used to create a file and should only be called on a
+        clean FileStorage instance. It will not save the object to disk, the
+        save function must be called to do this. If the sha256_digest is not
+        provided it will be calculated.
+
+        Args:
+            file_path (str): The path to the file.
+            sha256_digest (str, optional): The hash for the file.
+                Defaults to None.
+
+        Returns:
+            bool: True on success, False on failure.
+        """
+        self.file_path = file_path
+        self.sha256_digest = sha256_digest
+        if not self.sha256_digest:
+            sha2 = hashlib.sha256()
+            with open(self.file_path, 'rb') as f:
+                chunk = f.read(4096)
+                while chunk:
+                    sha2.update(chunk)
+                    chunk = f.read(4096)
+            self.sha256_digest = sha2.hexdigest()
         self.magic = magic.from_file(self.file_path)
         self.mime = magic.from_file(self.file_path, mime=True)
         self.size = self._size()

@@ -124,7 +124,8 @@ async def store_file(sha256_digest, file_path, file_type, data):
     """
     # Save the file to the 'filedb' and add it to the database
     file_storage = utils.FileStorage()
-    if not file_storage.create(sha256_digest, file_path, move=True):
+    file_storage.create(file_path, sha256_digest)
+    if not file_storage.save(move=True):
         raise error.SnakeError("Failed to store file on disk")
     data.update(file_storage.to_dict())
     data['name'] = strip_extensions(data['name'])

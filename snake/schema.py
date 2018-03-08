@@ -80,6 +80,11 @@ class FileSchema(Schema):
 
     timestamp = fields.DateTime("%Y-%m-%dT%H:%M:%S.%f")
 
+    submission_type = fields.Str(validate=not_blank, default="unknown")
+
+    parents = fields.Dict(values=fields.List(fields.Str(validate=not_blank)), keys=fields.Str(validate=not_blank), default={})
+    children = fields.Dict(values=fields.List(fields.Str(validate=not_blank)), keys=fields.Str(validate=not_blank), default={})
+
 
 class NoteSchema(Schema):
     """The note schema.

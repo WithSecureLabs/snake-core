@@ -190,6 +190,9 @@ class ScaleUploadHandler(snake_handler.SnakeHandler):
             if not data['name']:
                 data['name'] = f_name
 
+            # Set submission type
+            data['submission_type'] = 'upload:{}'.format(scale)
+
             # Check that the file is not empty
             if path.getsize(f_path) == 0:
                 self.write_warning("scale/upload - sample is empty", 422)
