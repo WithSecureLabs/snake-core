@@ -63,8 +63,7 @@ class SnakeRequest(request.Request):
     seem to supply this out of the box.
     """
 
-    @staticmethod
-    def kill_child_processes(parent_pid, sig=signal.SIGKILL):
+    def kill_child_processes(self, parent_pid, sig=signal.SIGKILL):  # pylint: disable=no-self-use
         """Kill child processes for the PID supplied
 
         This will try to look for any children and kill them with the signal
@@ -165,13 +164,19 @@ def execute_command(command_schema):
             command_schema['status'] = enums.Status.FAILED
             app_log.error(err)
         except (exceptions.SoftTimeLimitExceeded, exceptions.TimeLimitExceeded, BrokenPipeError) as err:
-            output = "{'error': 'time limit exceeded'}"
+            output = {'error': 'time limit exceeded'}
             command_schema['status'] = enums.Status.FAILED
             app_log.exception(err)
         except Exception as err:
-            output = "{'error': 'a server side error has occurred'}"
+            output = {'error': 'a server side error has occurred'}
             command_schema['status'] = enums.Status.FAILED
             app_log.exception(err)
+        else:
+            # Test serialising of scale output as it could fail and we need to catch that
+            try:
+                json.dumps(output)
+            except TypeError as err:
+                output = {'error': 'failed to serialize scale output - {}'.format(err)}
         finally:
             command_schema['end_time'] = datetime.utcnow()
             command_schema = schema.CommandSchema().dump(command_schema)
