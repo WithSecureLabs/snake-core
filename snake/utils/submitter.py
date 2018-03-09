@@ -68,7 +68,7 @@ def submit(file_schema, file_type, file, parent, scale_name):  # pylint: disable
             else:
                 document['parents'][parent.sha256_digest] += [submission_type]
         else:
-            document['parents'] = {parent.sha256_digest: [submission_type]}
+            document['parents'][parent.sha256_digest] = [submission_type]
         # Validate
         document = schema.FileSchema().dump(schema.FileSchema().load(document))
         # Update
@@ -84,7 +84,7 @@ def submit(file_schema, file_type, file, parent, scale_name):  # pylint: disable
             else:
                 document['children'][file.sha256_digest] += [submission_type]
         else:
-            document['children'] = {file.sha256_digest: [submission_type]}
+            document['children'][file.sha256_digest] = [submission_type]
         # Validate
         document = schema.FileSchema().dump(schema.FileSchema().load(document))
         # Update
