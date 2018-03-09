@@ -62,7 +62,7 @@ def submit(file_schema, file_type, file, parent, scale_name):  # pylint: disable
     document = db.file_collection.select(file.sha256_digest)
     if document:
         # Check if the parent and type already exist
-        if parent.sha256_digest in document['parents']:
+        if 'parents' in document and parent.sha256_digest in document['parents']:
             if submission_type in document['parents'][parent.sha256_digest]:
                 return document
             else:
@@ -78,7 +78,7 @@ def submit(file_schema, file_type, file, parent, scale_name):  # pylint: disable
         document = db.file_collection.select(parent.sha256_digest)
         if not document:  # Parent does not exist it has been delete, don't update it
             return db.file_collection.select(file.sha256_digest)
-        if file.sha256_digest in document['children']:
+        if 'children' in document and file.sha256_digest in document['children']:
             if submission_type in document['children'][file.sha256_digest]:
                 return db.file_collection.select(file.sha256_digest)
             else:
