@@ -54,14 +54,14 @@ TLD = [
 # chars possibly. Needs testing against string extraction covering all cases, did not have such
 # a sample at hand.
 
-IPV4_REGEX = re.compile('[12]?[0-9]{1,2}\.[12]?[0-9]{1,2}\.[12]?[0-9]{1,2}\.[12]?[0-9]{1,2}')
-IPV6_REGEX = re.compile('([a-fA-F0-9]{4}:?){3,8}')
-UNIX_PATH_REGEX = re.compile('[^\\n\\r/]+/{1}([^\\n\\r]+/?)+(\\.[a-zA-Z]{2,5})?')
-EMAIL_REGEX = re.compile('((\w|\d)[\\.-]?)+@\\w+\.[a-zA-Z]{2,5}[^\\w\\d]')
-URL_REGEX = re.compile('[\\w]{1,5}://(\\w+\\.){1,2}([\\w-]+/?)*(\\.\\w{1,6})?')
+IPV4_REGEX = re.compile('[1-2]?[0-9]?[0-9]\.[1-2]?[0-9]?[0-9]\.[1-2]?[0-9]?[0-9]\.[1-2]?[0-9]?[0-9]')
+IPV6_REGEX = re.compile('((?=.*::)(?!.*::.+::)(::)?([\\dA-Fa-f]{1,4}:(:|\\b)|){5}|([\\dA-Fa-f]{1,4}:){6})((([\\dA-Fa-f]{1,4}((?!\\3)::|:\\b|(?![\\dA-Fa-f])))|(?!\\2\\3)){2}|(((2[0-4]|1\\d|[1-9])?\\d|25[0-5])\\.?\\b){4})')
+EMAIL_REGEX = re.compile('(\\w[-.\\w]*)@([-\\w]+(?:\\.[-\\w]+)*)\\.([A-Za-z]{2,4})')
+URL_REGEX = re.compile('([A-Za-z]+://)([-\\w]+(?:\\.\\w[-\\w]*)+)(:\\d+)?(/[^.!,?\"<>\\[\\]{}\\s\\x7F-\\xFF]*(?:[.!,?]+[^.!,?\"<>\\[\\]{}\\s\\x7F-\\xFF]+)*)?"')
 DOMAIN_REGEX = re.compile('(h?t?t?p?s?://)?([\\w]+\\.)+(' + '|'.join(TLD) + ')')
-WINDOWS_PATH_REGEX = re.compile('[a-zA-Z]{1}:\\\\([a-zA-Z0-9]+\\?)+(\\.[a-zA-Z0-9]{0,5})?')
-MAC_REGEX = re.compile('[a-zA-Z0-9]{2}(-[a-zA-Z0-9]{2}){5}')
+WINDOWS_PATH_REGEX = re.compile('([A-Za-z]):\\\\((?:[A-Za-z\\d][A-Za-z\\d\\- \\x27_\\(\\)]{0,61}\\\\?)*[A-Za-z\\d][A-Za-z\\d\\- \\x27_\\(\\)]{0,61})(\\.[A-Za-z\\d]{1,6})?')
+UNIX_PATH_REGEX = re.compile('(?:/[A-Za-z\\d.][A-Za-z\\d\\-.]{0,61})+')
+MAC_REGEX = re.compile('[A-Fa-f\\d]{2}(?:[:-][A-Fa-f\\d]{2}){5}')
 DATE1_REGEX = re.compile('((?:19|20)\\d\\d)[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])')
 DATE2_REGEX = re.compile('(0[1-9]|[12][0-9]|3[01])[- /.](0[1-9]|1[012])[- /.]((?:19|20)\\d\\d)')
 DATE3_REGEX = re.compile('(0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])[- /.]((?:19|20)\\d\\d)')
