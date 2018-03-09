@@ -17,6 +17,20 @@ from snake.core import snake_handler
 # pylint: disable=arguments-differ
 
 
+class StoreSampleHandler(snake_handler.SnakeHandler):
+    """Extends `SnakeHandler`."""
+
+    async def get(self, sha256_digest):
+        document = await db.async_file_collection.select(sha256_digest)
+        if not document:
+            self.write_warning("store - no sample for given sha256 digest", 404, sha256_digest)
+            self.finish()
+            return
+        document = schema.FileSchema().dump(schema.FileSchema().load(document))
+        self.jsonify({'sample': document})
+        self.finish()
+
+
 class StoreHandler(snake_handler.SnakeHandler):
     """Extends `SnakeHandler`."""
 
@@ -47,8 +61,9 @@ class StoreHandler(snake_handler.SnakeHandler):
             documents += [cursor.next_object()]
 
         documents = schema.FileSchema(many=True).dump(schema.FileSchema(many=True).load(documents))
-        self.jsonify({'store': documents})
+        self.jsonify({'samples': documents})
         self.finish()
 
 
+StoreSampleRoute = (r"/store/(?P<sha256_digest>[a-zA-Z0-9]+)?", StoreSampleHandler)  # pylint: disable=invalid-name
 StoreRoute = (r"/store", StoreHandler)  # pylint: disable=invalid-name

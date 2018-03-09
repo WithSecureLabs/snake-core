@@ -30,7 +30,7 @@ def generate_routes():  # pylint: disable=too-many-locals
         memory.MemoryRoute, memory.MemoriesRoute,
         scale.ScaleRoute, scale.ScaleCommandsRoute, scale.ScaleInterfaceRoute, scale.ScaleUploadRoute, scale.ScalesRoute,
         note.NoteRoute, note.NotePostRoute, note.NotesRoute,
-        store.StoreRoute,
+        store.StoreSampleRoute, store.StoreRoute,
         upload.UploadFileRoute, upload.UploadFilesRoute, upload.UploadMemoryRoute
     ]
 
