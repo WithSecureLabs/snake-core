@@ -150,7 +150,7 @@ def execute_command(command_schema):
             command_schema = schema.CommandSchema().dump(command_schema)
             command_collection.update(command_schema['sha256_digest'], command_schema['scale'], command_schema['command'], command_schema)
             command_schema = schema.CommandSchema().load(command_schema)
-            scale_manager_ = scale_manager.ScaleManager(command_schema['scale'])
+            scale_manager_ = scale_manager.ScaleManager([command_schema['scale']])
             scale = scale_manager_.get_scale(command_schema['scale'])
             commands = scale_manager_.get_component(scale, enums.ScaleComponent.COMMANDS)
             cmd = commands.snake.command(command_schema['command'])
