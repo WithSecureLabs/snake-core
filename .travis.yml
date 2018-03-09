@@ -1,0 +1,20 @@
+dist: xenial
+language: generic
+
+sudo: required
+
+stages:
+  - compile
+  - test
+  - deploy
+
+jobs:
+  include:
+    - stage: compile
+      script: .travis/compile.sh
+    - stage: test
+      script: .travis/regression.sh
+      script: .travis/style.sh
+      script: .travis/unit.sh
+    - stage: deploy
+      script: .travis/deploy.sh
