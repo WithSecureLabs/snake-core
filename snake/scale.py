@@ -666,7 +666,7 @@ def command(cmd_dict=None):
 
             output = func(args=args_, file=file_storage, opts=opts, self=self)
             if not isinstance(output, dict) and not isinstance(output, list):
-                raise TypeError("%s failed to return a dictionary" % func.__name__)
+                raise TypeError("%s failed to return a dictionary or list" % func.__name__)
             return output
         wrapper.__wrapped__ = func
         wrapper.__command__ = True
@@ -725,7 +725,7 @@ def pull(pull_dict=None):
 
             output = func(args=args_, file=file_storage, opts=opts, self=self)
             if not isinstance(output, dict) and not isinstance(output, list):
-                raise TypeError("%s failed to return a dictionary" % func.__name__)
+                raise TypeError("%s failed to return a dictionary or list" % func.__name__)
             return output
         wrapper.__wrapped__ = func
         wrapper.__pull__ = True
@@ -782,7 +782,7 @@ def push(push_dict=None):
 
             output = func(args=args_, file=file_storage, opts=opts, self=self)
             if not isinstance(output, dict) and not isinstance(output, list):
-                raise TypeError("%s failed to return a dictionary" % func.__name__)
+                raise TypeError("%s failed to return a dictionary or list" % func.__name__)
             return output
         wrapper.__wrapped__ = func
         wrapper.__push__ = True
