@@ -59,7 +59,7 @@ setup(
     author="Alex Kornitzer",
     author_email="alex.kornitzer@countercept.com",
     description="The binary store!",
-    license="",
+    license="https://github.com/countercept/snake-core/blob/master/LICENSE",
     keywords="snake binary malware",
-    url="",
+    url="https://github.com/countercept/snake-core",
 )
