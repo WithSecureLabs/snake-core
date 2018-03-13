@@ -15,7 +15,7 @@ def bold(text):
     return '** ' + text + ' **'
 
 
-def code(text, lang='bash'):
+def code(text, lang=''):
     """Code.
 
     Args:
