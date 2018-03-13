@@ -16,7 +16,7 @@ def test_code():
     """
 
     output = md.code('abcd')
-    assert output == '``` abcd ```'
+    assert output == '```\r\nabcd\r\n```'
 
 
 def test_cr():
