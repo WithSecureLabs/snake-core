@@ -15,7 +15,7 @@ def bold(text):
     return '** ' + text + ' **'
 
 
-def code(text):
+def code(text, lang='bash'):
     """Code.
 
     Args:
@@ -24,7 +24,7 @@ def code(text):
     Returns:
         str: code text.
     """
-    return '``` ' + text + ' ```'
+    return '```{}\r\n'.format(lang) + text + '\r\n```'
 
 
 def cr():
