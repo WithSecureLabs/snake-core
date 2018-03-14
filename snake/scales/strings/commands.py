@@ -21,11 +21,11 @@ class Commands(scale.Commands):
         'info': 'This function will return strings found within the file'
     })
     def all_strings(self, args, file, opts):
-        return {'strings': str(subprocess.check_output(["strings", file.file_path]), encoding="utf-8").split('\n')}
+        return str(subprocess.check_output(["strings", file.file_path]), encoding="utf-8").split('\n')
 
     @staticmethod
     def all_strings_plaintext(json):
-        return '\n'.join(json['strings'])
+        return '\n'.join(json)
 
     @scale.command({
         'info': 'This function will return interesting strings found within the file'
@@ -57,8 +57,8 @@ class Commands(scale.Commands):
                 output += [string + ' (DATE2_REGEX)']
             if regex.DATE3_REGEX.search(string):
                 output += [string + ' (DATE3_REGEX)']
-        return {'hits': output}
+        return output
 
     @staticmethod
     def interesting_plaintext(json):
-        return '\n'.join(json['hits'])
+        return '\n'.join(json)
