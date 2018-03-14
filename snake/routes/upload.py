@@ -82,14 +82,14 @@ class UploadFileHandler(snake_handler.StreamHandler):
         document = await db.async_file_collection.select(sha256_digest)
         if document:
             document = schema.FileSchema().dump(schema.FileSchema().load(document))
-            self.write_warning("upload/file - file already exists for given sha256 digest", 409, {'file': document})
+            self.write_warning("upload/file - file already exists for given sha256 digest", 409, {'sample': document})
             self.finish()
             return
 
         # Save the file and add it to the database
         document = await route_support.store_file(sha256_digest, f_path, enums.FileType.FILE, data)
         document = schema.FileSchema().dump(schema.FileSchema().load(document))
-        self.jsonify({'file': document})
+        self.jsonify({'sample': document})
         self.finish()
 
 
@@ -168,7 +168,7 @@ class UploadFilesHandler(snake_handler.StreamHandler):
             documents += [await route_support.store_file(sha256_digest, f_path, enums.FileType.FILE, d)]
             i += 1
         documents = schema.FileSchema(many=True).dump(schema.FileSchema(many=True).load(documents))
-        self.jsonify({'files': documents})
+        self.jsonify({'samples': documents})
         self.finish()
 
 
@@ -222,14 +222,14 @@ class UploadMemoryHandler(snake_handler.StreamHandler):
         document = await db.async_file_collection.select(sha256_digest)
         if document:
             document = schema.FileSchema().dump(schema.FileSchema().load(document))
-            self.write_warning("upload/memory - memory already exists for given sha256 digest", 409, {'memory': document})
+            self.write_warning("upload/memory - memory already exists for given sha256 digest", 409, {'sample': document})
             self.finish()
             return
 
         # Save the file and add it to the database
         document = await route_support.store_file(sha256_digest, f_path, enums.FileType.MEMORY, data)
         document = schema.FileSchema().dump(schema.FileSchema().load(document))
-        self.jsonify({'memory': document})
+        self.jsonify({'sample': document})
         self.finish()
 
 

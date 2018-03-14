@@ -219,7 +219,7 @@ class ScaleUploadHandler(snake_handler.SnakeHandler):
             # Save the file and add it to the database
             document = await route_support.store_file(sha256_digest, f_path, data['file_type'], data)
             document = schema.FileSchema().dump(schema.FileSchema().load(document))
-            self.jsonify({document['file_type']: document})
+            self.jsonify({'sample': document})
             self.finish()
 
 
