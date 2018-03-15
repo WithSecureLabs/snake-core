@@ -15,15 +15,19 @@ def bold(text):
     return '** ' + text + ' **'
 
 
-def code(text, lang=''):
+def code(text, inline=False, lang=''):
     """Code.
 
     Args:
         text (str): text to make code.
+        inline (bool, optional): format as inline code, ignores the lang argument. Defaults to False.
+        lang (str, optional): set the code block language. Defaults to ''.
 
     Returns:
         str: code text.
     """
+    if inline:
+        return '`{}`'.format(text)
     return '```{}\r\n'.format(lang) + text + '\r\n```'
 
 
