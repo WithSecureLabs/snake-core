@@ -11,7 +11,7 @@ from snake import scale
 from snake.scales.strings import regex
 
 
-SPECIAL_CHARS = ["'", '(', '"', '|', '&', '<', '`', '!', '>', ';', '$', ')', '\\\\']
+SPECIAL_CHARS = [" ", "'", '(', '"', '|', '&', '<', '`', '!', '>', ';', '$', ')', '\\\\']
 
 
 class Commands(scale.Commands):
