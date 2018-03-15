@@ -6,8 +6,12 @@ import shutil
 import subprocess
 
 from snake import error
+from snake import fields
 from snake import scale
 from snake.scales.strings import regex
+
+
+SPECIAL_CHARS = ["'", '(', '"', '|', '&', '<', '`', '!', '>', ';', '$', ')', '\\\\']
 
 
 class Commands(scale.Commands):
@@ -28,35 +32,66 @@ class Commands(scale.Commands):
         return '\n'.join(json)
 
     @scale.command({
+        'args': {
+            'min_length': fields.Int(default=5, missing=5)
+        },
         'info': 'This function will return interesting strings found within the file'
     })
     def interesting(self, args, file, opts):
         strings = str(subprocess.check_output(["strings", file.file_path]), encoding="utf-8").split('\n')
-        # TODO: Review the regexes associated with interesting strings
+        min_length = args['min_length']
         output = []
         for string in strings:
-            if regex.IPV4_REGEX.search(string):
+            match = regex.IPV4_REGEX.search(string)
+            if match and len(match.group()) > min_length:
                 output += [string + ' (IPV4_REGEX)']
-            if regex.IPV6_REGEX.search(string):
+            match = regex.IPV6_REGEX.search(string)
+            if match and len(match.group()) > min_length:
                 output += [string + ' (IPV6_REGEX)']
-            if regex.EMAIL_REGEX.search(string):
+            match = regex.EMAIL_REGEX.search(string)
+            if match and len(match.group()) > min_length:
                 output += [string + ' (EMAIL_REGEX)']
-            if regex.URL_REGEX.search(string):
+            match = regex.URL_REGEX.search(string)
+            if match and len(match.group()) > min_length:
                 output += [string + ' (URL_REGEX)']
-            if regex.DOMAIN_REGEX.search(string):
+            match = regex.DOMAIN_REGEX.search(string)
+            if match and len(match.group()) > min_length:
                 output += [string + ' (DOMAIN_REGEX)']
-            if regex.WINDOWS_PATH_REGEX.search(string):
+            match = regex.WINDOWS_PATH_REGEX.search(string)
+            if match and len(match.group()) > min_length:
                 output += [string + ' (WINDOWS_PATH_REGEX)']
-            if regex.UNIX_PATH_REGEX.search(string):
-                output += [string + ' (UNIX_PATH_REGEX)']
-            if regex.MAC_REGEX.search(string):
+            match = regex.MAC_REGEX.search(string)
+            if match and len(match.group()) > min_length:
                 output += [string + ' (MAC_REGEX)']
-            if regex.DATE1_REGEX.search(string):
+            match = regex.DATE1_REGEX.search(string)
+            if match and len(match.group()) > min_length:
                 output += [string + ' (DATE1_REGEX)']
-            if regex.DATE2_REGEX.search(string):
+            match = regex.DATE2_REGEX.search(string)
+            if match and len(match.group()) > min_length:
                 output += [string + ' (DATE2_REGEX)']
-            if regex.DATE3_REGEX.search(string):
+            match = regex.DATE3_REGEX.search(string)
+            if match and len(match.group()) > min_length:
                 output += [string + ' (DATE3_REGEX)']
+
+            match = regex.UNIX_PATH_REGEX.search(string)
+            if match:
+                valid_path = False
+                match_str = match.group()
+                if len(match_str) <= min_length:
+                    continue
+                if ((match_str.startswith("'") and match_str.endswith("'")) or (match_str.startswith('"') and match_str.endswith('"'))):
+                    valid_path = True
+                elif any(char in SPECIAL_CHARS for char in match_str):
+                    valid_path = True
+                    for i in SPECIAL_CHARS:
+                        if i in match_str:
+                            index = match_str.index(i)
+                            if index > 0 and match_str[index - 1] != "\\":
+                                valid_path = False
+                else:
+                    valid_path = True
+                if valid_path:
+                    output += [string + ' (UNIX_PATH_REGEX)']
         return output
 
     @staticmethod
