@@ -42,36 +42,37 @@ class Commands(scale.Commands):
         min_length = args['min_length']
         output = []
         for string in strings:
+            rules = []
             match = regex.IPV4_REGEX.search(string)
             if match and len(match.group()) > min_length:
-                output += [string + ' (IPV4_REGEX)']
+                rules += ['IPV4_REGEX']
             match = regex.IPV6_REGEX.search(string)
             if match and len(match.group()) > min_length:
-                output += [string + ' (IPV6_REGEX)']
+                rules += ['IPV6_REGEX']
             match = regex.EMAIL_REGEX.search(string)
             if match and len(match.group()) > min_length:
-                output += [string + ' (EMAIL_REGEX)']
+                rules += ['EMAIL_REGEX']
             match = regex.URL_REGEX.search(string)
             if match and len(match.group()) > min_length:
-                output += [string + ' (URL_REGEX)']
+                rules += ['URL_REGEX']
             match = regex.DOMAIN_REGEX.search(string)
             if match and len(match.group()) > min_length:
-                output += [string + ' (DOMAIN_REGEX)']
+                rules += ['DOMAIN_REGEX']
             match = regex.WINDOWS_PATH_REGEX.search(string)
             if match and len(match.group()) > min_length:
-                output += [string + ' (WINDOWS_PATH_REGEX)']
+                rules += ['WINDOWS_PATH_REGEX']
             match = regex.MAC_REGEX.search(string)
             if match and len(match.group()) > min_length:
-                output += [string + ' (MAC_REGEX)']
+                rules += ['MAC_REGEX']
             match = regex.DATE1_REGEX.search(string)
             if match and len(match.group()) > min_length:
-                output += [string + ' (DATE1_REGEX)']
+                rules += ['DATE1_REGEX']
             match = regex.DATE2_REGEX.search(string)
             if match and len(match.group()) > min_length:
-                output += [string + ' (DATE2_REGEX)']
+                rules += ['DATE2_REGEX']
             match = regex.DATE3_REGEX.search(string)
             if match and len(match.group()) > min_length:
-                output += [string + ' (DATE3_REGEX)']
+                rules += ['DATE3_REGEX']
 
             match = regex.UNIX_PATH_REGEX.search(string)
             if match:
@@ -91,7 +92,10 @@ class Commands(scale.Commands):
                 else:
                     valid_path = True
                 if valid_path:
-                    output += [string + ' (UNIX_PATH_REGEX)']
+                    rules += ['UNIX_PATH_REGEX']
+
+            if rules:
+                output += ['{} ({})'.format(string, ', '.join(rules))]
         return output
 
     @staticmethod
