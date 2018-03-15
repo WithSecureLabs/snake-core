@@ -137,15 +137,15 @@ class ScaleManager():
         """
         if component == enums.ScaleComponent.COMMANDS:
             if component not in scale.components:
-                raise error.ScaleError("scale does not provide commands: %s" % scale)
+                raise error.ScaleError("scale does not provide commands: %s" % scale.name)
             return scale.components[enums.ScaleComponent.COMMANDS]
         if component == enums.ScaleComponent.INTERFACE:
             if component not in scale.components:
-                raise error.ScaleError("scale does not provide interface: %s" % scale)
+                raise error.ScaleError("scale does not provide interface: %s" % scale.name)
             return scale.components[enums.ScaleComponent.INTERFACE]
         if component == enums.ScaleComponent.UPLOAD:
             if component not in scale.components:
-                raise error.ScaleError("scale does not provide upload: %s" % scale)
+                raise error.ScaleError("scale does not provide upload: %s" % scale.name)
             return scale.components[enums.ScaleComponent.UPLOAD]
         raise error.ScaleError("component is not supported")
 
