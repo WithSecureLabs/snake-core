@@ -41,7 +41,7 @@ def check(scale):
         print("Scale loadable: {}".format(scale))
 
 
-def install(scales):
+def install(scales, upgrade=False):
     # Check for pip3
     pip3 = shutil.which('pip3')
     if not pip3:
@@ -64,7 +64,10 @@ def install(scales):
     # Install scales
     for repo, scale in scales_:  # pylint: disable=invalid-name
         print("Installing: {}".format(scale))
-        proc = subprocess.run([pip3, 'install', '{}{}'.format(repo, scale)])
+        if upgrade:
+            proc = subprocess.run([pip3, 'install', '--upgrade', '{}{}'.format(repo, scale)])
+        else:
+            proc = subprocess.run([pip3, 'install', '{}{}'.format(repo, scale)])
         if proc.returncode:
             print("Failed to install: {}".format(scale))
             sys.exit(1)
@@ -93,10 +96,12 @@ def main():
     subparsers = parser.add_subparsers(help='command help')
     subparsers.required = True
     subparsers.dest = 'command'
-    parser_install = subparsers.add_parser('check', help='check the status of a scale')
-    parser_install.add_argument('scale', nargs=1, help='a scale')
+    parser_check = subparsers.add_parser('check', help='check the status of a scale')
+    parser_check.add_argument('scale', nargs=1, help='a scale')
     parser_install = subparsers.add_parser('install', help='install a scale or multiple scales')
     parser_install.add_argument('scale', nargs='+', help='a scale or multiple scales')
+    parser_upgrade = subparsers.add_parser('upgrade', help='upgrade a scale or multiple scales')
+    parser_upgrade.add_argument('scale', nargs='+', help='a scale or multiple scales')
     args = parser.parse_args()
 
     if args.command == 'check':
@@ -104,6 +109,9 @@ def main():
         return
     if args.command == 'install':
         install(args.scale)
+        return
+    if args.command == 'upgrade':
+        install(args.scale, upgrade=True)
         return
 
 
