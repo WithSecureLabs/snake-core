@@ -504,14 +504,18 @@ class Scale:  # pylint: disable=too-many-instance-attributes
         for _imp, mod_name, _is_pkg in pkgutil.iter_modules(mod.__path__):
             if mod_name == 'commands':
                 try:
-                    self.components['commands'] = importlib.import_module('snake.scales.' + self.name + '.commands').Commands()
+                    cmd = importlib.import_module('snake.scales.' + self.name + '.commands')
+                    if hasattr(cmd, 'Commands'):
+                        self.components['commands'] = cmd.Commands()
                 except error.ScaleError as err:  # TODO: Handle warnings somehow?
                     app_log.error('%s: %s', self.name, err)
                 except Exception as err:
                     raise err
             if mod_name == 'interface':
                 try:
-                    self.components['interface'] = importlib.import_module('snake.scales.' + self.name + '.interface').Interface()
+                    intf = importlib.import_module('snake.scales.' + self.name + '.interface')
+                    if hasattr(intf, 'Interface'):
+                        self.components['interface'] = intf.Interface()
                 except error.ScaleError as err:  # TODO: Handle warnings somehow?
                     app_log.error('%s: %s', self.name, err)
                 except Exception as err:
@@ -519,7 +523,9 @@ class Scale:  # pylint: disable=too-many-instance-attributes
 
             if mod_name == 'upload':
                 try:
-                    self.components['upload'] = importlib.import_module('snake.scales.' + self.name + '.upload').Upload()
+                    upld = importlib.import_module('snake.scales.' + self.name + '.upload')
+                    if hasattr(upld, 'Upload'):
+                        self.components['upload'] = upld.Upload()
                 except error.ScaleError as err:  # TODO: Handle warnings somehow?
                     app_log.error('%s: %s', self.name, err)
                 except Exception as err:
