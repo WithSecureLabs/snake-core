@@ -11,6 +11,6 @@ Attributes:
 
 API_VERSION = '1.0'
 USER_AGENT = 'Snake, a binary analysis platform by Countercept'
-VERSION = '1.0'
+VERSION = '1.0.1'
 
 ETC_DIR = '/etc/snake'
