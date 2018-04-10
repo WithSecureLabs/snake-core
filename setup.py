@@ -15,15 +15,15 @@ setup(
     version="1.0.1",
     packages=setuptools.find_packages(exclude=["tests"]),
     install_requires=[
-        'celery',
-        'celery[redis]',
-        'marshmallow',
-        'motor',
-        'python-magic',
-        'pyyaml',
-        'requests',
-        'tornado',
-        'webargs'
+        'celery==4.1.0',
+        'celery[redis]==4.1.0',
+        'marshmallow==3.0.0b7',
+        'motor==1.2.1',
+        'python-magic==0.4.15',
+        'pyyaml==3.12',
+        'requests==2.18.4',
+        'tornado==5.0.1',
+        'webargs==2.0.0'
     ],
     extras_require={
         'ssdeep': ['pydeep']
