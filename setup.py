@@ -15,8 +15,8 @@ setup(
     version="1.0.1",
     packages=setuptools.find_packages(exclude=["tests"]),
     install_requires=[
-        'celery==4.1.0',
-        'celery[redis]==4.1.0',
+        'celery==4.1.1',
+        'celery[redis]==4.1.1',
         'marshmallow==3.0.0b7',
         'motor==1.2.1',
         'python-magic==0.4.15',
