@@ -113,6 +113,14 @@ class SnakeHandler(web.RequestHandler):  # pylint: disable=abstract-method
                 _filter = {"$and": _filter}
         return _filter
 
+    def create_args(self, args):
+        _args = {}
+        for arg in args:
+            if 'args' == arg[:4]:
+                a_key = arg.split('[')[1].split(']')[0]
+                _args[a_key] = self.get_arguments(arg)[0]
+        return _args
+
     @staticmethod
     def json_decode(data):
         """Decode json.
