@@ -208,8 +208,8 @@ class CommandsHandler(snake_handler.SnakeHandler):
             else:
                 uri_data[arg] = self.get_argument(arg)
 
-        uri_data['args'] = self.create_args(self.request.arguments)
         if uri_data.keys():
+            uri_data['args'] = self.create_args(self.request.arguments)
             uri_data = self.GetSchema().load(uri_data)
             data = [uri_data]
 
