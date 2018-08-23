@@ -122,7 +122,10 @@ class AsyncCommandCollection():
             command (str): The command.
             callback (func, optional): The callback function. Defaults to None.
         """
-        return self.db.commands.delete_many({"sha256_digest": sha256_digest, "scale": scale, "command": command}, callback=callback)
+        future = self.db.commands.delete_many({"sha256_digest": sha256_digest, "scale": scale, "command": command})
+        if callback:
+            future.add_done_callback(callback)
+        return future
 
     def insert(self, document, callback=None):
         """Insert command.
@@ -134,7 +137,10 @@ class AsyncCommandCollection():
         Returns:
             :obj:`CommandSchema`: The inserted command.
         """
-        return self.db.commands.insert_one(document, callback=callback)
+        future = self.db.commands.insert_one(document)
+        if callback:
+            future.add_done_callback(callback)
+        return future
 
     def select(self, sha256_digest, scale=None, command=None, callback=None):
         """Select command.
@@ -148,7 +154,10 @@ class AsyncCommandCollection():
         Returns:
             :obj:`CommandSchema`: The selected command.
         """
-        return self.db.commands.find_one({"sha256_digest": sha256_digest, "scale": scale, "command": command}, callback=callback)
+        future = self.db.commands.find_one({"sha256_digest": sha256_digest, "scale": scale, "command": command})
+        if callback:
+            future.add_done_callback(callback)
+        return future
 
     def select_many(self, sha256_digest=None, scale=None, command=None):
         """Select commands.
@@ -189,7 +198,10 @@ class AsyncCommandCollection():
         Returns:
             :obj:`CommandSchema`: The updated command.
         """
-        return self.db.commands.update_one({"sha256_digest": sha256_digest, "scale": scale, "command": command}, {'$set': data}, callback=callback)
+        future = self.db.commands.update_one({"sha256_digest": sha256_digest, "scale": scale, "command": command}, {'$set': data})
+        if callback:
+            future.add_done_callback(callback)
+        return future
 
     def replace(self, sha256_digest, scale, command, data, callback=None):  # pylint: disable=too-many-arguments
         """Replace command.
@@ -204,7 +216,10 @@ class AsyncCommandCollection():
         Returns:
             :obj:`CommandSchema`: The replaced command.
         """
-        return self.db.commands.replace_one({"sha256_digest": sha256_digest, "scale": scale, "command": command}, data, callback=callback)
+        future = self.db.commands.replace_one({"sha256_digest": sha256_digest, "scale": scale, "command": command}, data)
+        if callback:
+            future.add_done_callback(callback)
+        return future
 
 # pylint: disable=missing-docstring
 

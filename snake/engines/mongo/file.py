@@ -106,7 +106,10 @@ class AsyncFileCollection():
             sha256_digest (str): The hash of the file.
             callback (func, optional): The callback function. Defaults to None.
         """
-        return self.db.files.delete_many({"sha256_digest": sha256_digest}, callback=callback)
+        future = self.db.files.delete_many({"sha256_digest": sha256_digest})
+        if callback:
+            future.add_done_callback(callback)
+        return future
 
     def insert(self, document, callback=None):
         """Insert file.
@@ -118,7 +121,10 @@ class AsyncFileCollection():
         Returns:
             :obj:`CommandSchema`: The inserted file.
         """
-        return self.db.files.insert_one(document, callback=callback)
+        future = self.db.files.insert_one(document)
+        if callback:
+            future.add_done_callback(callback)
+        return future
 
     def select(self, sha256_digest, callback=None):
         """Select file.
@@ -130,7 +136,10 @@ class AsyncFileCollection():
         Returns:
             :obj:`CommandSchema`: The selected file.
         """
-        return self.db.files.find_one({"sha256_digest": sha256_digest}, callback=callback)
+        future = self.db.files.find_one({"sha256_digest": sha256_digest})
+        if callback:
+            future.add_done_callback(callback)
+        return future
 
     def select_many(self, sha256_digest=None, file_type=None):
         """Select files.
@@ -179,4 +188,7 @@ class AsyncFileCollection():
         Returns:
             :obj:`CommandSchema`: The updated file.
         """
-        return self.db.files.update_one({"sha256_digest": sha256_digest}, {'$set': data}, callback=callback)
+        future = self.db.files.update_one({"sha256_digest": sha256_digest}, {'$set': data})
+        if callback:
+            future.add_done_callback(callback)
+        return future
