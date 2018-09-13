@@ -251,7 +251,8 @@ async def unzip_file_unix(file_path, file_name, output_dir, protected=False, pas
                 stderr=asyncio.subprocess.PIPE)
             _stdout, stderr = await proc.communicate()
             if not proc.returncode:
-                new_path = os.path.join(output_dir, file_name)
+                # NOTE: We flatten dirs so we must strip dirs from file_name if present
+                new_path = os.path.join(output_dir, file_name.split('/')[-1])
             else:
                 err = str(stderr, encoding='utf-8')
         else:
@@ -262,7 +263,8 @@ async def unzip_file_unix(file_path, file_name, output_dir, protected=False, pas
                     stderr=asyncio.subprocess.PIPE)
                 _stdout, stderr = await proc.communicate()
                 if not proc.returncode:
-                    new_path = os.path.join(output_dir, file_name)
+                    # NOTE: We flatten dirs so we must strip dirs from file_name if present
+                    new_path = os.path.join(output_dir, file_name.split('/')[-1])
                 else:
                     err = str(stderr, encoding='utf-8')
                 if new_path:
@@ -274,7 +276,8 @@ async def unzip_file_unix(file_path, file_name, output_dir, protected=False, pas
             stderr=asyncio.subprocess.PIPE)
         _stdout, stderr = await proc.communicate()
         if not proc.returncode:
-            new_path = os.path.join(output_dir, file_name)
+            # NOTE: We flatten dirs so we must strip dirs from file_name if present
+            new_path = os.path.join(output_dir, file_name.split('/')[-1])
         else:
             err = str(stderr, encoding='utf-8')
     if not new_path:
