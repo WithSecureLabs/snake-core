@@ -61,7 +61,7 @@ async def queue_command(data):
         :obj:`CommandSchema`: The command schema with updates
     """
     # The lastest execution always wins, thus we replace the current one in the db
-    document = await db.async_command_collection.select(data['sha256_digest'], data['scale'], data['command'])
+    document = await db.async_command_collection.select(data['sha256_digest'], data['scale'], data['command'], data['args'])
     if document:
         if 'status' in document and document['status'] == enums.Status.RUNNING:
             return schema.CommandSchema().dump(schema.CommandSchema().load(document))
@@ -71,7 +71,7 @@ async def queue_command(data):
                 _output_id = document['_output_id']
             data['timestamp'] = datetime.utcnow()
             data = schema.CommandSchema().dump(data)
-            await db.async_command_collection.replace(data['sha256_digest'], data['scale'], data['command'], data)
+            await db.async_command_collection.replace(data['sha256_digest'], data['scale'], data['command'], data['args'], data)
             # NOTE: We delete after the replace to try and prevent concurrent
             # reads to a file while it is being deleted
             if _output_id:
@@ -89,19 +89,19 @@ async def queue_command(data):
         task = celery.execute_command.apply_async(args=[data], time_limit=data['timeout'] + 30, soft_time_limit=data['timeout'])
         result = await celery.wait_for_task(task)
         if not task.successful():
-            document = await db.async_command_collection.select(data['sha256_digest'], data['scale'], data['command'])
+            document = await db.async_command_collection.select(data['sha256_digest'], data['scale'], data['command'], data['args'])
             _output_id = None
             if '_output_id' in document:
                 _output_id = document['_output_id']
             _new_output_id = await db.async_command_output_collection.put(document['command'], b"{'error': 'worker failed please check log'}")
             document['_output_id'] = _new_output_id
             document['status'] = enums.Status.FAILED
-            await db.async_command_collection.update(document['sha256_digest'], document['scale'], document['command'], document)
+            await db.async_command_collection.update(document['sha256_digest'], document['scale'], document['command'], data['args'], document)
             if _output_id:
                 await db.async_command_output_collection.delete(_output_id)
             raise error.SnakeError(result)
 
-    return await db.async_command_collection.select(data['sha256_digest'], data['scale'], data['command'])
+    return await db.async_command_collection.select(data['sha256_digest'], data['scale'], data['command'], data['args'])
 
 
 async def store_file(sha256_digest, file_path, file_type, data):

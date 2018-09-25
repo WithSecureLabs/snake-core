@@ -46,13 +46,16 @@ class CommandHandler(snake_handler.SnakeHandler):
     """Extends `SnakeHandler`."""
 
     @tornadoparser.use_args({
+        'args': fields.Dict(required=False, default={}, missing={}),
         'command': fields.Str(required=True),
         'format': fields.Str(type=enums.Format, missing=enums.Format.JSON),
         'scale': fields.Str(required=True),
         'sha256_digest': fields.Str(required=True)
     })
     async def get(self, data):
-        document = await db.async_command_collection.select(data['sha256_digest'], data['scale'], data['command'])
+        data['args'] = self.create_args(self.request.arguments)
+        document = await db.async_command_collection.select(data['sha256_digest'], data['scale'], data['command'],
+                                                            data['args'])
         if not document:
             self.write_warning("command - no output for given data", 404, data)
             self.finish()
@@ -150,6 +153,7 @@ class CommandsHandler(snake_handler.SnakeHandler):
 
         Defines the valid schema for get request.
         """
+        args = fields.Dict(required=False, default={}, missing={})
         command = fields.Str(required=False)
         format = fields.Str(type=enums.Format, missing=enums.Format.JSON)
         sha256_digests = fields.List(fields.Str(), required=False)
@@ -167,9 +171,9 @@ class CommandsHandler(snake_handler.SnakeHandler):
         scale = fields.Str(required=True)
         timeout = fields.Int(required=False)
 
-    async def _get_documents(self, sha, sca, cmd, fmt):
+    async def _get_documents(self, sha, sca, cmd, args, fmt):
         documents = []
-        cur = db.async_command_collection.select_many(sha256_digest=sha, scale=sca, command=cmd)
+        cur = db.async_command_collection.select_many(sha256_digest=sha, scale=sca, command=cmd, args=args)
         while await cur.fetch_next:
             doc = cur.next_object()
             doc = schema.CommandSchema().load(doc)
@@ -203,7 +207,9 @@ class CommandsHandler(snake_handler.SnakeHandler):
                 uri_data['sha256_digests'] = [self.get_argument(arg)]
             else:
                 uri_data[arg] = self.get_argument(arg)
+
         if uri_data.keys():
+            uri_data['args'] = self.create_args(self.request.arguments)
             uri_data = self.GetSchema().load(uri_data)
             data = [uri_data]
 
@@ -230,18 +236,19 @@ class CommandsHandler(snake_handler.SnakeHandler):
             for i in data:
                 scale = i['scale'] if 'scale' in i.keys() else None
                 cmd = i['command'] if 'command' in i.keys() else None
+                args = i['args'] if len(i['args']) > 0 else None
                 if 'sha256_digests' in i.keys() and i['sha256_digests'] and i['sha256_digests'][0].lower() != 'all':
                     if i['sha256_digests'][0][:4] == 'all:':  # Handle file_type restrictions
                         file_type = enums.FileType(i['sha256_digests'][0].lower().split(':')[1])
                         file_collection = db.async_file_collection.select_many(file_type=file_type)
                         while await file_collection.fetch_next:
                             sha = file_collection.next_object()['sha256_digest']
-                            documents += await self._get_documents(sha, scale, cmd, i['format'])
+                            documents += await self._get_documents(sha, scale, cmd, args, i['format'])
                     else:
                         for sha in i['sha256_digests']:
-                            documents += await self._get_documents(sha, scale, cmd, i['format'])
+                            documents += await self._get_documents(sha, scale, cmd, args, i['format'])
                 else:
-                    documents += await self._get_documents(None, scale, cmd, i['format'])
+                    documents += await self._get_documents(None, scale, cmd, args, i['format'])
         except SnakeError as err:
             self.write_warning("commands - %s" % err, 404, data)
             self.finish()
