@@ -35,7 +35,7 @@ class Upload(scale.Upload):
     def upload(self, args, working_dir):
         url_parser = parse.urlparse(args['url'])
         if not url_parser.scheme:
-            url_parser = url_parser('http://' + args['url'])
+            url_parser = parse.urlparse('http://' + args['url'])
         req = requests.get(url_parser.geturl(),
                            headers=HEADERS,
                            proxies=PROXIES,

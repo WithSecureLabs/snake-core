@@ -212,7 +212,7 @@ class ScaleUploadHandler(snake_handler.SnakeHandler):
             document = await db.async_file_collection.select(sha256_digest)
             if document:
                 document = schema.FileSchema().dump(schema.FileSchema().load(document))
-                self.write_warning("scale/upload - sample already exists for given sha256 digest", 404, {'sample': document})
+                self.write_warning("scale/upload - sample already exists for given sha256 digest", 409, {'sample': document})
                 self.finish()
                 return
 

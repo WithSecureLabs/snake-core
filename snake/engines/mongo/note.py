@@ -97,7 +97,10 @@ class AsyncNoteCollection():
             sha256_digest (str): The hash of the file.
             callback (func, optional): The callback function. Defaults to None.
         """
-        return self.db.notes.delete_many({"sha256_digest": sha256_digest}, callback=callback)
+        future = self.db.notes.delete_many({"sha256_digest": sha256_digest})
+        if callback:
+            future.add_done_callback(callback)
+        return future
 
     def insert(self, document, callback=None):
         """Insert note.
@@ -109,7 +112,10 @@ class AsyncNoteCollection():
         Returns:
             :obj:`CommandSchema`: The inserted note.
         """
-        return self.db.notes.insert_one(document, callback=callback)
+        future = self.db.notes.insert_one(document)
+        if callback:
+            future.add_done_callback(callback)
+        return future
 
     def select(self, sha256_digest, callback=None):
         """Select note.
@@ -121,7 +127,10 @@ class AsyncNoteCollection():
         Returns:
             :obj:`CommandSchema`: The selected note.
         """
-        return self.db.notes.find_one({"sha256_digest": sha256_digest}, callback=callback)
+        future = self.db.notes.find_one({"sha256_digest": sha256_digest})
+        if callback:
+            future.add_done_callback(callback)
+        return future
 
     def select_many(self, sha256_digest):
         """Select notes.
@@ -158,4 +167,7 @@ class AsyncNoteCollection():
         Returns:
             :obj:`CommandSchema`: The updated note.
         """
-        return self.db.notes.update_one({"sha256_digest": sha256_digest}, {'$set': data}, callback=callback)
+        future = self.db.notes.update_one({"sha256_digest": sha256_digest}, {'$set': data})
+        if callback:
+            future.add_done_callback(callback)
+        return future
