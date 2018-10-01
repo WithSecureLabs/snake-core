@@ -98,22 +98,16 @@ class UploadFilesHandler(snake_handler.StreamHandler):
 
     async def post(self):
         # XXX: Does not support extraction atm
-        # NOTE: We allow multiple file uploads through use of file arrays and
-        # an array of data. We then assume that the orders are matched.
+        #  curl 'http://127.0.0.1:5000/upload/files' -F '0=@./file1' -F '1=@./file2' -F 'data={0:{"name": "file1"}, 1:{"name": "file2"}}'
         #
-        #  curl 'http://127.0.0.1:5000/upload/files' -F 'files[]=@./file1' -F 'files[]=@./file2' -F 'data=[{"name": "file1"}, {"name": "file2"}]'
-        #
-        data = []
+        data = {}
         try:
             data = self.get_argument('data')
         except Exception:  # noqa
-            data = []
-        if data == [] or 'files[]' not in self.request.files:
+            data = {}
+        if data == {}:
             missing_fields = {}
-            if data == []:
-                missing_fields['data'] = ["Missing data for required field."]
-            if 'files[]' not in self.request.files:
-                missing_fields['files[]'] = ["Missing data for required field."]
+            missing_fields['data'] = ["Missing data for required field."]
             self.write_warning(missing_fields, 422)
             self.finish()
             return
@@ -124,30 +118,26 @@ class UploadFilesHandler(snake_handler.StreamHandler):
             self.finish()
             return
 
-        # Update the names
-        i = 0
-        for d in data:  # pylint: disable=invalid-name
-            if 'name' not in d:
-                d['name'] = self.request.files['files[]'][i]['filename']
-            i += 1
+        # Data is optional we do not check that it keys correctly, to avoid
+        # some errors later down the line prevalidate the data dictionaries
+        data_arrays = []
+        for k, v in data.items():
+            if 'name' not in v:
+                v['name'] = self.request.files[k][0]['filename']
+            data_arrays += [v]
 
-        # Validate
-        data = schema.FileSchema(many=True).load(data)
-        data = schema.FileSchema(many=True).dump(data)
+        # Validate with discard we need the keys
+        data_arrays = schema.FileSchema(many=True).load(data_arrays)
+        schema.FileSchema(many=True).dump(data_arrays)
 
-        if not len(data) == len(self.request.files['files[]']):
-            self.write_warning("upload/files - file and data arrays size mismatch", 400, data)
-            self.finish()
-            return
-
+        # Upload the files
         documents = []
-        i = 0
-        for d in data:  # pylint: disable=invalid-name
+        for k, v in data.items():
             # Set submission type
-            d['submission_type'] = 'upload:file'
+            v['submission_type'] = 'upload:file'
 
             # Get the files offset and size
-            f_path = self.request.files['files[]'][i]['body'].decode('utf-8')
+            f_path = self.request.files[k][0]['body'].decode('utf-8')
 
             # Hash the file
             sha2 = hashlib.sha256()
@@ -158,15 +148,12 @@ class UploadFilesHandler(snake_handler.StreamHandler):
                     chunk = f.read(4096)
             sha256_digest = sha2.hexdigest()
 
-            # Check if the file already exists, and ignore
+            # Check if the file already exists, if so add to documents, but there is no need to upload it
             document = await db.async_file_collection.select(sha256_digest)
-            if document and document.type == enums.FileType.FILE:
-                document = schema.FileSchema().dump(schema.FileSchema().load(document))
-                continue
-
-            # Save the file and add it to the database
-            documents += [await route_support.store_file(sha256_digest, f_path, enums.FileType.FILE, d)]
-            i += 1
+            if document:
+                documents += [document]
+            else:
+                documents += [await route_support.store_file(sha256_digest, f_path, enums.FileType.FILE, v)]
         documents = schema.FileSchema(many=True).dump(schema.FileSchema(many=True).load(documents))
         self.jsonify({'samples': documents})
         self.finish()
