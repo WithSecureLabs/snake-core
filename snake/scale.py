@@ -367,7 +367,7 @@ class Interface(metaclass=abc.ABCMeta):
             """
             return {
                 'command': cmd.__name__,
-                'args': {k: type(v).__name__ for k, v in cmd.pull_opts.args.items()} if cmd.pull_opts.args else None,
+                'args': {k: v.to_dict() for k, v in cmd.pull_opts.args.items()} if cmd.pull_opts.args else None,
                 'formats': self.__formats(cmd.__name__),
                 'info': cmd.pull_opts.info
             }
@@ -404,7 +404,7 @@ class Interface(metaclass=abc.ABCMeta):
             """
             return {
                 'command': cmd.__name__,
-                'args': {k: type(v).__name__ for k, v in cmd.push_opts.args.items()} if cmd.push_opts.args else None,
+                'args': {k: v.to_dict() for k, v in cmd.push_opts.args.items()} if cmd.push_opts.args else None,
                 'formats': self.__formats(cmd.__name__),
                 'info': cmd.push_opts.info
             }

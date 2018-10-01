@@ -58,9 +58,10 @@ class SnakeField:
             type_ = 'integer'
         else:
             type_.lower()
-        default = self.default if type(self.default) is missing else None
+        default = self.default if type(self.default) is not type(missing) else None
         return {
             'default': default,
+            'required': self.required,
             'type': type_,
             'values': self.values
         }
