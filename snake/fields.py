@@ -13,7 +13,68 @@ TODOs:
 # pylint: disable=wildcard-import
 # pylint: disable=unused-wildcard-import
 
-from marshmallow.fields import *  # noqa
+import marshmallow.exceptions
+import marshmallow.fields
+from marshmallow.fields import __all__  # noqa
+from marshmallow.utils import missing
+
+
+class SnakeField:
+    def __init__(self, *args, **kwargs):
+        # Get our kwargs, handle them, remove them, pass it on
+        # TODO: We should support ranges for number based items which
+        # marshmallow alread supports, we just need to expose in to_dict
+        if 'values' in kwargs:
+            self.__values = kwargs['values']
+            del kwargs['values']
+            kwargs['validate'] = self.values_validator
+        else:
+            self.__values = []
+        super().__init__(*args, **kwargs)
+
+    @property
+    def values(self):
+        if hasattr(self.__values, '__call__'):
+            return self.__values()
+        else:
+            return self.__values
+
+    def values_validator(self, value):
+        if value not in self.values:
+            raise marshmallow.exceptions.ValidationError("'%s' must be in '%s'" % value, self.values)
+
+    def to_dict(self):
+        # Resolve Aliases:
+        # URL = Url
+        # Str = String
+        # Bool = Boolean
+        # Int = Integer
+        type_ = type(self).__name__
+        if type_ is 'Str':
+            type_ = 'string'
+        elif type_ is 'Bool':
+            type_ = 'boolean'
+        elif type_ is 'Int':
+            type_ = 'integer'
+        else:
+            type_.lower()
+        default = self.default if type(self.default) is missing else None
+        return {
+            'default': default,
+            'type': type_,
+            'values': self.values
+        }
+
+
+# This is a bit grim, but we can dynamically extend all Marshmallow field objects
+for field in __all__:
+    ignore = ['Dict', 'Field']
+    if field not in ignore:
+        cls = getattr(marshmallow.fields, field)
+        globals()[field] = type(field, (SnakeField,cls,), {})
+    else:
+        cls = getattr(marshmallow.fields, field)
+        globals()[field] = type(field, (cls,), {})
 
 
 # Fields

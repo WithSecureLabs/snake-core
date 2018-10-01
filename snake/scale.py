@@ -149,7 +149,7 @@ class Commands(metaclass=abc.ABCMeta):
             """
             return {
                 'command': cmd.__name__,
-                'args': {k: type(v).__name__ for k, v in cmd.cmd_opts.args.items()} if cmd.cmd_opts.args else None,
+                'args': {k: v.to_dict() for k, v in cmd.cmd_opts.args.items()} if cmd.cmd_opts.args else None,
                 'formats': self.__formats(cmd.__name__),
                 'info': cmd.cmd_opts.info
             }
