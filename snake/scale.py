@@ -564,7 +564,7 @@ class Upload(metaclass=abc.ABCMeta):
                 dict: information about upload.
             """
             return {
-                'args': {k: type(v).__name__ for k, v in self.__upld.arguments().items()} if self.__upld.arguments() else None,
+                'args': {k: v.to_dict() for k, v in self.__upld.arguments().items()} if self.__upld.arguments() else None,
                 'info': self.__upld.info()
             }
 

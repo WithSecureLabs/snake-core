@@ -41,7 +41,7 @@ class SnakeField:
 
     def values_validator(self, value):
         if value not in self.values:
-            raise marshmallow.exceptions.ValidationError("'%s' must be in '%s'" % value, self.values)
+            raise marshmallow.exceptions.ValidationError("'%s' must be in '%s'" % (value, self.values))
 
     def to_dict(self):
         # Resolve Aliases:
