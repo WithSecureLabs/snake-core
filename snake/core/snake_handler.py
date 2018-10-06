@@ -195,8 +195,7 @@ class SnakeHandler(web.RequestHandler):  # pylint: disable=abstract-method
             "status": "error",
             "message": message
         }
-
-        _message = message
+        _message = str(message)
         if data:
             _message += '\n'
             if isinstance(data, dict):

@@ -40,7 +40,7 @@ def validate_args(cmd, args):
             s = schema.Schema(fields=copy.deepcopy(cmd_args))
             return True, s.load(args)
         except exceptions.ValidationError as err:
-            return False, '{"args": %s}' % err.messages
+            return False, {'args': err.messages}
     return True, args
 
 
@@ -65,12 +65,12 @@ class CommandHandler(snake_handler.SnakeHandler):
         document = await db.async_command_collection.select(data['sha256_digest'], data['scale'], data['command'],
                                                             data['args'])
         if not document:
-            self.write_warning("command - no output for given data", 404, data)
+            self.write_warning("no output for given data", 404, data)
             self.finish()
             return
 
         if document['status'] == enums.Status.ERROR:
-            self.write_warning("command - %s" % document['output'], 404, data)
+            self.write_warning("%s" % document['output'], 404, data)
             self.finish()
             return
 
@@ -85,7 +85,7 @@ class CommandHandler(snake_handler.SnakeHandler):
                 document['output'] = commands.snake.format(data['format'], document['command'], output)
             document['format'] = data['format']
         except (SnakeError, TypeError) as err:
-            self.write_warning("command - %s" % err, 404, data)
+            self.write_warning("%s" % err, 404, data)
             self.finish()
             return
 
@@ -106,7 +106,7 @@ class CommandHandler(snake_handler.SnakeHandler):
         # Check that there is a file for this hash
         document = await db.async_file_collection.select(data['sha256_digest'])
         if not document:
-            self.write_warning("command - no sample for given data", 404, data)
+            self.write_warning("no sample for given data", 404, data)
             self.finish()
             return
 
@@ -116,22 +116,23 @@ class CommandHandler(snake_handler.SnakeHandler):
             commands = scale_manager.get_component(scale, enums.ScaleComponent.COMMANDS)
             cmd = commands.snake.command(data['command'])
         except SnakeError as err:
-            self.write_warning("command - %s" % err, 404, data)
+            self.write_warning("%s" % err, 404, data)
             self.finish()
             return
 
         # Validate arguments as to not waste users time, yes this is also done on execution
-        result, data['args'] = validate_args(cmd, data['args'])
+        result, args = validate_args(cmd, data['args'])
         if not result:
-            self.write_warning("command - %s" % self.json_decode(data['args'].replace("'", '"')), 422)
+            self.write_warning(args, 422, data)
             self.finish()
             return
+        data['args'] = args
 
         # Queue command
         try:
             document = await route_support.queue_command(data)
         except SnakeError as err:
-            self.write_warning("command - %s" % err, 500, data)
+            self.write_warning("%s" % err, 500, data)
             self.finish()
             return
 
@@ -143,7 +144,7 @@ class CommandHandler(snake_handler.SnakeHandler):
             document['output'] = commands.snake.format(data['format'], document['command'], output)
             document['format'] = data['format']
         except SnakeError as err:
-            self.write_warning("command - %s" % err, 404, data)
+            self.write_warning("%s" % err, 404, data)
             self.finish()
             return
 
@@ -290,11 +291,12 @@ class CommandsHandler(snake_handler.SnakeHandler):
                 self.finish()
                 return
 
-            result, d['args'] = validate_args(cmd, d['args'])
+            result, args = validate_args(cmd, d['args'])
             if not result:
-                self.write_warning(self.json_decode(d['args'].replace("'", '"')), 422)
+                self.write_warning(self.json_decode(args.replace("'", '"')), 422, data)
                 self.finish()
                 return
+            d['args'] = args
 
         # Validate hashes and validate them against scales
         missing = []
