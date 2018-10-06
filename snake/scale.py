@@ -317,6 +317,7 @@ class Interface(metaclass=abc.ABCMeta):
             return self.__intf.__getattribute__(func)(json)
 
         def info(self):
+            # TODO: Update doc
             """A dictionary of information for commands.
 
             A dictionary containing two lists of commands, one for pull, and one for push.
@@ -324,16 +325,12 @@ class Interface(metaclass=abc.ABCMeta):
             Returns:
                 dict: dictionary containing two list of `puller_info`/`pusher_info` dictionaries.
             """
-            pullers = []
-            pushers = []
+            commands = []
             for i in self.__intf.pull_list:
-                pullers.append(self.puller_info(i))
+                commands.append(self.puller_info(i))
             for i in self.__intf.push_list:
-                pushers.append(self.pusher_info(i))
-            return {
-                'pullers': pullers,
-                'pushers': pushers
-            }
+                commands.append(self.pusher_info(i))
+            return commands
 
         def puller(self, puller):
             """Get a pull command function.
@@ -369,7 +366,8 @@ class Interface(metaclass=abc.ABCMeta):
                 'command': cmd.__name__,
                 'args': {k: v.to_dict() for k, v in cmd.pull_opts.args.items()} if cmd.pull_opts.args else None,
                 'formats': self.__formats(cmd.__name__),
-                'info': cmd.pull_opts.info
+                'info': cmd.pull_opts.info,
+                'type': 'pull'
             }
 
         def pusher(self, pusher):
@@ -406,7 +404,8 @@ class Interface(metaclass=abc.ABCMeta):
                 'command': cmd.__name__,
                 'args': {k: v.to_dict() for k, v in cmd.push_opts.args.items()} if cmd.push_opts.args else None,
                 'formats': self.__formats(cmd.__name__),
-                'info': cmd.push_opts.info
+                'info': cmd.push_opts.info,
+                'type': 'push'
             }
 
     def __init__(self):
