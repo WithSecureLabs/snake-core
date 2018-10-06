@@ -63,7 +63,7 @@ class SnakeField:
             'default': default,
             'required': self.required,
             'type': type_,
-            'values': self.values
+            'values': self.values if self.values else None
         }
 
 
