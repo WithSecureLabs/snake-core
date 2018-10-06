@@ -32,6 +32,9 @@ class SnakeField:
             self.__values = []
         super().__init__(*args, **kwargs)
 
+    def has_default(self):
+        return type(self.default) is not type(missing)
+
     @property
     def values(self):
         if hasattr(self.__values, '__call__'):

@@ -657,6 +657,7 @@ def command(cmd_dict=None):
                 args_ = kwargs['args']
             else:
                 args_ = args[0]
+            args_ = copy.deepcopy(args_)
             if len(args) > 1 and 'sha256_digest' in kwargs:
                 raise TypeError("%s got multiple values for argument 'sha256_digest'" % func.__name__)
             elif 'sha256_digest' in kwargs:
@@ -664,7 +665,9 @@ def command(cmd_dict=None):
             else:
                 file_storage = utils.FileStorage(args[1])
             opts = func.cmd_opts
-
+            for k, v in cmd_opts.args.items():
+                if k not in args_ and v.has_default():
+                    args_[k] = v.default
             if cmd_opts.args.keys():
                 args_ = schema.Schema(fields=copy.deepcopy(cmd_opts.args)).load(args_)
 
@@ -716,6 +719,7 @@ def pull(pull_dict=None):
                 args_ = kwargs['args']
             else:
                 args_ = args[0]
+            args_ = copy.deepcopy(args_)
             if len(args) > 1 and 'sha256_digest' in kwargs:
                 raise TypeError("%s got multiple values for argument 'sha256_digest'" % func.__name__)
             elif 'sha256_digest' in kwargs:
@@ -723,7 +727,9 @@ def pull(pull_dict=None):
             else:
                 file_storage = utils.FileStorage(args[1])
             opts = func.pull_opts
-
+            for k, v in pull_opts.args.items():
+                if k not in args_ and v.has_default():
+                    args_[k] = v.default
             if pull_opts.args.keys():
                 args_ = schema.Schema(fields=copy.deepcopy(pull_opts.args)).load(args_)
 
@@ -773,6 +779,7 @@ def push(push_dict=None):
                 args_ = kwargs['args']
             else:
                 args_ = args[0]
+            args_ = copy.deepcopy(args_)
             if len(args) > 1 and 'sha256_digest' in kwargs:
                 raise TypeError("%s got multiple values for argument 'sha256_digest'" % func.__name__)
             elif 'sha256_digest' in kwargs:
@@ -780,7 +787,9 @@ def push(push_dict=None):
             else:
                 file_storage = utils.FileStorage(args[1])
             opts = func.push_opts
-
+            for k, v in push_opts.args.items():
+                if k not in args_ and v.has_default():
+                    args_[k] = v.default
             if push_opts.args.keys():
                 args_ = schema.Schema(fields=copy.deepcopy(push_opts.args)).load(args_)
 
