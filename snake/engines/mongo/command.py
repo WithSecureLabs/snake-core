@@ -7,6 +7,8 @@ import bson
 
 import gridfs
 from motor import motor_asyncio
+import pymongo
+from pymongo import collation
 
 from snake import enums
 
@@ -168,7 +170,8 @@ class AsyncCommandCollection():
             future.add_done_callback(callback)
         return future
 
-    def select_many(self, sha256_digest=None, scale=None, command=None, args=None):
+    def select_many(self, sha256_digest=None, scale=None, command=None, args=None, order=pymongo.DESCENDING, sort=None):
+
         """Select commands.
 
         Args:
@@ -185,15 +188,24 @@ class AsyncCommandCollection():
         keys = [k for k, v in data.items() if v is None]
         for k in keys:
             del data[k]
-        return self.db.commands.find(data)
+        cursor = self.db.commands.find(data)
+        if sort:
+            cursor = cursor.sort([(sort, order)]).collation(collation.Collation(locale="en"))
+        return cursor
 
-    def select_all(self):
+    def select_all(self, filter_=None, order=pymongo.DESCENDING, sort=None):
         """Select all commands.
 
         Returns:
             :obj:`Cursor`: The mongodb cursor.
         """
-        return self.db.commands.find()
+        if filter_:
+            documents = self.db.commands.find(filter_)
+        else:
+            documents = self.db.commands.find()
+        if sort:
+            documents = documents.sort([(sort, order)]).collation(collation.Collation(locale="en"))
+        return documents
 
     def update(self, sha256_digest, scale, command, args, data, callback=None):  # pylint: disable=too-many-arguments
         """Update command.

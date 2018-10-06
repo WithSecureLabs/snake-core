@@ -190,7 +190,7 @@ class Commands(metaclass=abc.ABCMeta):
                 raise TypeError('format not supported')
             if json is None:  # Running or pending
                 return json
-            if 'error' in json:  # Handle error message formating
+            if isinstance(json, dict) and 'error' in json:  # Handle error message formating
                 if fmt == enums.Format.JSON:
                     return json
                 if fmt == enums.Format.MARKDOWN:
