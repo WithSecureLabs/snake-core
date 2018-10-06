@@ -33,7 +33,7 @@ class Commands(scale.Commands):
 
     @scale.command({
         'args': {
-            'min_length': fields.Int(default=5, missing=5)
+            'min_length': fields.Int(default=5)
         },
         'info': 'This function will return interesting strings found within the file'
     })

@@ -190,7 +190,7 @@ class Commands(metaclass=abc.ABCMeta):
                 raise TypeError('format not supported')
             if json is None:  # Running or pending
                 return json
-            if 'error' in json:  # Handle error message formating
+            if isinstance(json, dict) and 'error' in json:  # Handle error message formating
                 if fmt == enums.Format.JSON:
                     return json
                 if fmt == enums.Format.MARKDOWN:
@@ -317,6 +317,7 @@ class Interface(metaclass=abc.ABCMeta):
             return self.__intf.__getattribute__(func)(json)
 
         def info(self):
+            # TODO: Update doc
             """A dictionary of information for commands.
 
             A dictionary containing two lists of commands, one for pull, and one for push.
@@ -324,16 +325,12 @@ class Interface(metaclass=abc.ABCMeta):
             Returns:
                 dict: dictionary containing two list of `puller_info`/`pusher_info` dictionaries.
             """
-            pullers = []
-            pushers = []
+            commands = []
             for i in self.__intf.pull_list:
-                pullers.append(self.puller_info(i))
+                commands.append(self.puller_info(i))
             for i in self.__intf.push_list:
-                pushers.append(self.pusher_info(i))
-            return {
-                'pullers': pullers,
-                'pushers': pushers
-            }
+                commands.append(self.pusher_info(i))
+            return commands
 
         def puller(self, puller):
             """Get a pull command function.
@@ -369,7 +366,8 @@ class Interface(metaclass=abc.ABCMeta):
                 'command': cmd.__name__,
                 'args': {k: v.to_dict() for k, v in cmd.pull_opts.args.items()} if cmd.pull_opts.args else None,
                 'formats': self.__formats(cmd.__name__),
-                'info': cmd.pull_opts.info
+                'info': cmd.pull_opts.info,
+                'type': 'pull'
             }
 
         def pusher(self, pusher):
@@ -406,7 +404,8 @@ class Interface(metaclass=abc.ABCMeta):
                 'command': cmd.__name__,
                 'args': {k: v.to_dict() for k, v in cmd.push_opts.args.items()} if cmd.push_opts.args else None,
                 'formats': self.__formats(cmd.__name__),
-                'info': cmd.push_opts.info
+                'info': cmd.push_opts.info,
+                'type': 'push'
             }
 
     def __init__(self):
@@ -657,6 +656,7 @@ def command(cmd_dict=None):
                 args_ = kwargs['args']
             else:
                 args_ = args[0]
+            args_ = copy.deepcopy(args_)
             if len(args) > 1 and 'sha256_digest' in kwargs:
                 raise TypeError("%s got multiple values for argument 'sha256_digest'" % func.__name__)
             elif 'sha256_digest' in kwargs:
@@ -664,7 +664,9 @@ def command(cmd_dict=None):
             else:
                 file_storage = utils.FileStorage(args[1])
             opts = func.cmd_opts
-
+            for k, v in cmd_opts.args.items():
+                if k not in args_ and v.has_default():
+                    args_[k] = v.default
             if cmd_opts.args.keys():
                 args_ = schema.Schema(fields=copy.deepcopy(cmd_opts.args)).load(args_)
 
@@ -716,6 +718,7 @@ def pull(pull_dict=None):
                 args_ = kwargs['args']
             else:
                 args_ = args[0]
+            args_ = copy.deepcopy(args_)
             if len(args) > 1 and 'sha256_digest' in kwargs:
                 raise TypeError("%s got multiple values for argument 'sha256_digest'" % func.__name__)
             elif 'sha256_digest' in kwargs:
@@ -723,7 +726,9 @@ def pull(pull_dict=None):
             else:
                 file_storage = utils.FileStorage(args[1])
             opts = func.pull_opts
-
+            for k, v in pull_opts.args.items():
+                if k not in args_ and v.has_default():
+                    args_[k] = v.default
             if pull_opts.args.keys():
                 args_ = schema.Schema(fields=copy.deepcopy(pull_opts.args)).load(args_)
 
@@ -773,6 +778,7 @@ def push(push_dict=None):
                 args_ = kwargs['args']
             else:
                 args_ = args[0]
+            args_ = copy.deepcopy(args_)
             if len(args) > 1 and 'sha256_digest' in kwargs:
                 raise TypeError("%s got multiple values for argument 'sha256_digest'" % func.__name__)
             elif 'sha256_digest' in kwargs:
@@ -780,7 +786,9 @@ def push(push_dict=None):
             else:
                 file_storage = utils.FileStorage(args[1])
             opts = func.push_opts
-
+            for k, v in push_opts.args.items():
+                if k not in args_ and v.has_default():
+                    args_[k] = v.default
             if push_opts.args.keys():
                 args_ = schema.Schema(fields=copy.deepcopy(push_opts.args)).load(args_)
 

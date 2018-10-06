@@ -6,6 +6,7 @@ Attributes:
 """
 
 import copy
+import json
 
 from marshmallow import exceptions
 from webargs import tornadoparser
@@ -34,35 +35,42 @@ def validate_args(cmd, args):
         args (dict): The args to validate.
     """
     cmd_args = cmd.cmd_opts.args
-    try:
-        if cmd_args:
-            schema.Schema(fields=copy.deepcopy(cmd_args)).load(args)
-    except exceptions.ValidationError as err:
-        return False, '{"args": %s}' % err.messages
-    return True, None
+    if cmd_args:
+        try:
+            s = schema.Schema(fields=copy.deepcopy(cmd_args))
+            return True, s.load(args)
+        except exceptions.ValidationError as err:
+            return False, {'args': err.messages}
+    return True, args
 
 
 class CommandHandler(snake_handler.SnakeHandler):
     """Extends `SnakeHandler`."""
 
     @tornadoparser.use_args({
-        'args': fields.Dict(required=False, default={}, missing={}),
+        # 'args': fields.Dict(required=False, default={}, missing={}),
         'command': fields.Str(required=True),
         'format': fields.Str(type=enums.Format, missing=enums.Format.JSON),
+        'output': fields.Bool(required=False, default=True, missing=True),
         'scale': fields.Str(required=True),
         'sha256_digest': fields.Str(required=True)
     })
     async def get(self, data):
-        data['args'] = self.create_args(self.request.arguments)
+        # NOTE: Tornado/Marshmallow does not like Dict in args, will have to parse manually
+        # TODO: Use marshmallow validation
+        if 'args' in self.request.arguments and self.request.arguments['args']:
+            data['args'] = json.loads(self.request.arguments['args'][0])
+        else:
+            data['args'] = {}
         document = await db.async_command_collection.select(data['sha256_digest'], data['scale'], data['command'],
                                                             data['args'])
         if not document:
-            self.write_warning("command - no output for given data", 404, data)
+            self.write_warning("no output for given data", 404, data)
             self.finish()
             return
 
         if document['status'] == enums.Status.ERROR:
-            self.write_warning("command - %s" % document['output'], 404, data)
+            self.write_warning("%s" % document['output'], 404, data)
             self.finish()
             return
 
@@ -73,10 +81,11 @@ class CommandHandler(snake_handler.SnakeHandler):
         try:
             scale = scale_manager.get_scale(data['scale'])
             commands = scale_manager.get_component(scale, enums.ScaleComponent.COMMANDS)
-            document['output'] = commands.snake.format(data['format'], document['command'], output)
+            if data['output']:
+                document['output'] = commands.snake.format(data['format'], document['command'], output)
             document['format'] = data['format']
         except (SnakeError, TypeError) as err:
-            self.write_warning("command - %s" % err, 404, data)
+            self.write_warning("%s" % err, 404, data)
             self.finish()
             return
 
@@ -86,7 +95,7 @@ class CommandHandler(snake_handler.SnakeHandler):
 
     @tornadoparser.use_args({
         'args': fields.Dict(required=False, default={}, missing={}),
-        'asynchronous': fields.Str(required=False),
+        'asynchronous': fields.Bool(required=False),
         'command': fields.Str(required=True),
         'format': fields.Str(type=enums.Format, missing=enums.Format.JSON),
         'scale': fields.Str(required=True),
@@ -97,7 +106,7 @@ class CommandHandler(snake_handler.SnakeHandler):
         # Check that there is a file for this hash
         document = await db.async_file_collection.select(data['sha256_digest'])
         if not document:
-            self.write_warning("command - no sample for given data", 404, data)
+            self.write_warning("no sample for given data", 404, data)
             self.finish()
             return
 
@@ -107,22 +116,23 @@ class CommandHandler(snake_handler.SnakeHandler):
             commands = scale_manager.get_component(scale, enums.ScaleComponent.COMMANDS)
             cmd = commands.snake.command(data['command'])
         except SnakeError as err:
-            self.write_warning("command - %s" % err, 404, data)
+            self.write_warning("%s" % err, 404, data)
             self.finish()
             return
 
         # Validate arguments as to not waste users time, yes this is also done on execution
         result, args = validate_args(cmd, data['args'])
         if not result:
-            self.write_warning("command - %s" % self.json_decode(args.replace("'", '"')), 422)
+            self.write_warning(args, 422, data)
             self.finish()
             return
+        data['args'] = args
 
         # Queue command
         try:
             document = await route_support.queue_command(data)
         except SnakeError as err:
-            self.write_warning("command - %s" % err, 500, data)
+            self.write_warning("%s" % err, 500, data)
             self.finish()
             return
 
@@ -134,7 +144,7 @@ class CommandHandler(snake_handler.SnakeHandler):
             document['output'] = commands.snake.format(data['format'], document['command'], output)
             document['format'] = data['format']
         except SnakeError as err:
-            self.write_warning("command - %s" % err, 404, data)
+            self.write_warning("%s" % err, 404, data)
             self.finish()
             return
 
@@ -156,6 +166,7 @@ class CommandsHandler(snake_handler.SnakeHandler):
         args = fields.Dict(required=False, default={}, missing={})
         command = fields.Str(required=False)
         format = fields.Str(type=enums.Format, missing=enums.Format.JSON)
+        output = fields.Bool(required=False, default=True, missing=True)
         sha256_digests = fields.List(fields.Str(), required=False)
         scale = fields.Str(required=False)
 
@@ -171,9 +182,9 @@ class CommandsHandler(snake_handler.SnakeHandler):
         scale = fields.Str(required=True)
         timeout = fields.Int(required=False)
 
-    async def _get_documents(self, sha, sca, cmd, args, fmt):
+    async def _get_documents(self, sha, sca, cmd, args, fmt, otpt):
         documents = []
-        cur = db.async_command_collection.select_many(sha256_digest=sha, scale=sca, command=cmd, args=args)
+        cur = db.async_command_collection.select_many(sha256_digest=sha, scale=sca, command=cmd, args=args, sort="timestamp")
         while await cur.fetch_next:
             doc = cur.next_object()
             doc = schema.CommandSchema().load(doc)
@@ -188,7 +199,8 @@ class CommandsHandler(snake_handler.SnakeHandler):
                 output = await db.async_command_output_collection.get(doc['_output_id'])
             doc = schema.CommandSchema().dump(doc)
             try:
-                doc['output'] = commands.snake.format(fmt, cmd, output)
+                if otpt:
+                    doc['output'] = commands.snake.format(fmt, cmd, output)
                 doc['format'] = fmt
             except (SnakeError, TypeError) as err:
                 print("%s - %s" % (doc['scale'], err))  # TODO: Output to log
@@ -198,7 +210,9 @@ class CommandsHandler(snake_handler.SnakeHandler):
 
     @tornadoparser.use_args(GetSchema(many=True))
     async def get(self, data):  # pylint: disable=too-many-branches
+        # XXX: This whole function is shit
         # TODO: Should further clean this
+        # TODO: SORT
         # We accept RESTful syntax and JSON syntax to allow for increased
         # control. As this is a GET and we are RESTful, URI wins over JSON
         uri_data = {}
@@ -218,7 +232,7 @@ class CommandsHandler(snake_handler.SnakeHandler):
         # Handle no args, and return early
         if not data:
             try:
-                cur = db.async_command_collection.select_all()
+                cur = db.async_command_collection.select_all(sort="timestamp")
                 while await cur.fetch_next:
                     documents += [cur.next_object()]
             except SnakeError as err:
@@ -243,12 +257,12 @@ class CommandsHandler(snake_handler.SnakeHandler):
                         file_collection = db.async_file_collection.select_many(file_type=file_type)
                         while await file_collection.fetch_next:
                             sha = file_collection.next_object()['sha256_digest']
-                            documents += await self._get_documents(sha, scale, cmd, args, i['format'])
+                            documents += await self._get_documents(sha, scale, cmd, args, i['format'], i['output'])
                     else:
                         for sha in i['sha256_digests']:
-                            documents += await self._get_documents(sha, scale, cmd, args, i['format'])
+                            documents += await self._get_documents(sha, scale, cmd, args, i['format'], i['output'])
                 else:
-                    documents += await self._get_documents(None, scale, cmd, args, i['format'])
+                    documents += await self._get_documents(None, scale, cmd, args, i['format'], i['output'])
         except SnakeError as err:
             self.write_warning("commands - %s" % err, 404, data)
             self.finish()
@@ -279,9 +293,10 @@ class CommandsHandler(snake_handler.SnakeHandler):
 
             result, args = validate_args(cmd, d['args'])
             if not result:
-                self.write_warning(self.json_decode(args.replace("'", '"')), 422)
+                self.write_warning(self.json_decode(args.replace("'", '"')), 422, data)
                 self.finish()
                 return
+            d['args'] = args
 
         # Validate hashes and validate them against scales
         missing = []

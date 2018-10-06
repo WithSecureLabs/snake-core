@@ -12,6 +12,7 @@ import asyncio
 import hashlib
 import tempfile
 from os import path
+from datetime import datetime
 
 from marshmallow import exceptions
 from tornado import escape
@@ -109,7 +110,10 @@ class ScaleInterfaceHandler(snake_handler.SnakeHandler):
         interface = scale_manager.get_component(_scale, enums.ScaleComponent.INTERFACE)
         command = scale_manager.get_interface_command(interface, data['type'], data['command'])
 
+        data['timestamp'] = datetime.utcnow()
+
         # Execute command
+        # TODO: Handle status don't always chuck errors...
         try:
             loop = asyncio.get_event_loop()
             output = await loop.run_in_executor(None, command, data['args'], data['sha256_digest'])
@@ -124,9 +128,9 @@ class ScaleInterfaceHandler(snake_handler.SnakeHandler):
             return
 
         # Run formating
-        output = interface.snake.format(data['format'], data['command'], output)
+        data['output'] = interface.snake.format(data['format'], data['command'], output)
 
-        self.jsonify({"interface": output})
+        self.jsonify({"interface": data})
         self.finish()
 
 
