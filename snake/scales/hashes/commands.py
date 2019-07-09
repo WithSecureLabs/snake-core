@@ -177,7 +177,7 @@ class Commands(scale.Commands):
 
             output = []
             for result in results:
-                output += [(str(result[0]), result[1], '/#/' + result[2] + '/' + result[1], str(result[3]))]
+                output += [(str(result[0]), result[1], '/' + result[2] + '/' + result[1], str(result[3]))]
 
             return output
 
