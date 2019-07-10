@@ -30,6 +30,10 @@ from snake.core import scale_manager as sm
 
 DEFAULT_REPO = "git+https://github.com/countercept/snake-scales#subdirectory="
 
+# Allow pip to install to first path in user's python path
+TARGET_DIR = os.getenv("SNAKE_PYTHON_DIR", None)
+if TARGET_DIR:
+    TARGET_DIR = TARGET_DIR.split(":")[-1]
 
 def check(scale):
     print("Checking: {}".format(scale))
@@ -64,10 +68,12 @@ def install(scales, upgrade=False):
     # Install scales
     for repo, scale in scales_:  # pylint: disable=invalid-name
         print("Installing: {}".format(scale))
+        args = [pip3, 'install']
+        if TARGET_DIR:
+            args += ['--prefix', TARGET_DIR]
         if upgrade:
-            proc = subprocess.run([pip3, 'install', '--upgrade', '{}{}'.format(repo, scale)])
-        else:
-            proc = subprocess.run([pip3, 'install', '{}{}'.format(repo, scale)])
+            args += ['--upgrade']
+        proc = subprocess.run([*args, '{}{}'.format(repo, scale)])
         if proc.returncode:
             print("Failed to install: {}".format(scale))
             sys.exit(1)
