@@ -1,0 +1,11 @@
+FROM debian:stable-slim
+RUN apt-get update; apt-get install -y git libfuzzy-dev python3 python3-pip ssdeep; rm -Rf /var/cache/apt; rm -Rf /var/lib/apt
+ADD . /tmp/snake
+RUN pip3 install /tmp/snake[ssdeep]
+RUN useradd -u 2000 -r -s /sbin/nologin -d /var/cache/snake snaked;
+RUN mkdir /etc/snake; mkdir -p /etc/snake/scales; mkdir -p /var/cache/snake; mkdir -p /var/db/snake; mkdir -p /var/log/snake-pit; mkdir -p /var/lib/snake/scales;
+RUN chown snaked:snaked -R /etc/snake; chown snaked:snaked -R /etc/snake/scales; chown snaked:snaked -R /var/cache/snake; chown snaked:snaked -R /var/db/snake; chown snaked:snaked -R /var/log/snake-pit; chown snaked:snaked -R /var/lib/snake/scales;
+RUN cp /tmp/snake/snake/data/config/snake.conf /etc/snake/snake.conf
+COPY docker/entrypoint-pit.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["snake-pit"]
