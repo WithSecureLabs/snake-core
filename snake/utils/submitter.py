@@ -61,6 +61,9 @@ def submit(file_schema, file_type, file, parent, scale_name):  # pylint: disable
     # Update the parent child relationships
     document = db.file_collection.select(file.sha256_digest)
     if document:
+        # HACK: This is needed to get submission_type of parent
+        p = db.file_collection.select(parent.sha256_digest)
+
         # Check if the parent and type already exist
         if 'parents' not in document:
             document['parents'] = {}
@@ -68,9 +71,9 @@ def submit(file_schema, file_type, file, parent, scale_name):  # pylint: disable
             if submission_type in document['parents'][parent.sha256_digest]:
                 return document
             else:
-                document['parents'][parent.sha256_digest] += [submission_type]
+                document['parents'][parent.sha256_digest] += [p["submission_type"]]
         else:
-            document['parents'][parent.sha256_digest] = [submission_type]
+            document['parents'][parent.sha256_digest] = [p["submission_type"]]
         # Validate
         document = schema.FileSchema().dump(schema.FileSchema().load(document))
         # Update
