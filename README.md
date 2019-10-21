@@ -30,13 +30,13 @@ There are a few dependencies to install Snake.
 Snake can be installed as follows:
 
 ```bash
-pip3 install git+https://github.com/countercept/snake
+pip3 install git+https://github.com/countercept/snake-core
 ```
 
 or
 
 ```bash
-pip3 install git+https://github.com/countercept/snake[ssdeep]  # for fuzzy search support
+pip3 install git+https://github.com/countercept/snake-core[ssdeep]  # for fuzzy search support
 ```
 
 A default Snake install will make the following assumptions:
