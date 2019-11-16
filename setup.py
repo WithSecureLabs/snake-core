@@ -21,7 +21,7 @@ setup(
         'motor==2.0.0',
         'redis==3.2.1',
         'python-magic==0.4.15',
-        'pyyaml==3.13',
+        'pyyaml==5.1',
         'requests==2.18.4',
         'tornado==5.0.1',
         'webargs==5.1.3'
