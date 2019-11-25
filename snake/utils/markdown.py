@@ -12,7 +12,7 @@ def bold(text):
     Returns:
         str: bold text.
     """
-    return '** ' + text + ' **'
+    return '**' + text + '**'
 
 
 def code(text, inline=False, lang=''):
