@@ -24,7 +24,7 @@ setup(
         'pyyaml==5.1',
         'requests==2.18.4',
         'tornado==5.0.1',
-        'webargs==5.1.3'
+        'webargs==2.0.0'
     ],
     extras_require={
         'ssdeep': ['pydeep']
