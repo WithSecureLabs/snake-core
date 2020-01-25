@@ -12,7 +12,7 @@ def snake_test_suite():
 
 setup(
     name="snake",
-    version="1.0.1",
+    version="1.0.2",
     packages=setuptools.find_packages(exclude=["tests"]),
     install_requires=[
         'celery==4.3.0',
