@@ -177,7 +177,7 @@ class Commands(scale.Commands):
 
             output = []
             for result in results:
-                output += [(str(result[0]), result[1], '/' + result[2] + '/' + result[1], str(result[3]))]
+                output += [(str(result[0]), result[1], '/store/' + result[1], str(result[3]))]
 
             return output
 
@@ -186,7 +186,7 @@ class Commands(scale.Commands):
             output = md.table_header(('File Name', 'SHA256', 'Match (%)'))
             count = 0
             for j in json:
-                output += md.table_row((md.url(str(j[0]), j[2]),
+                output += md.table_row((md.url(str(j[0]), 'samples/' + str(j[1])),
                                         str(j[1]),
                                         str(j[3])))
                 count += 1
