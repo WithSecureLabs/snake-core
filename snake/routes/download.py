@@ -7,6 +7,7 @@ Attributes:
 from snake.core import snake_handler
 from snake.db import async_file_collection
 from snake.utils import file_storage as fs
+from urllib.parse import quote
 
 
 # pylint: disable=abstract-method
@@ -25,7 +26,7 @@ class DownloadHandler(snake_handler.SnakeHandler):
         file_storage = fs.FileStorage(sha256_digest)
         buf_size = 4096
         self.set_header('Content-Type', 'application/octet-stream')
-        self.set_header('Content-Disposition', 'attachment; filename="' + document['name'] + '.inactive"')
+        self.set_header('Content-Disposition', 'attachment; filename="' + quote(document['name']) + '.inactive"')
         with open(file_storage.file_path, 'rb') as f:
             while True:
                 data = f.read(buf_size)
