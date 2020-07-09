@@ -157,7 +157,7 @@ class AsyncFileCollection():
             del data[k]
         return self.db.files.find(data)
 
-    def select_all(self, filter_=None, order=pymongo.DESCENDING, sort=None):
+    def select_all(self, filter_=None, order=pymongo.DESCENDING, sort=None, limit=0, skip=0):
         """Select all files.
 
         Args:
@@ -170,9 +170,9 @@ class AsyncFileCollection():
         """
         documents = []
         if filter_:
-            documents = self.db.files.find(filter_)
+            documents = self.db.files.find(filter_, limit=limit, skip=skip)
         else:
-            documents = self.db.files.find()
+            documents = self.db.files.find(limit=limit, skip=skip)
         if sort:
             documents = documents.sort([(sort, order)]).collation(collation.Collation(locale="en"))
         return documents
