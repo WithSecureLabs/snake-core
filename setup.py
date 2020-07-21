@@ -25,7 +25,7 @@ setup(
         'requests==2.18.4',
         'tornado==5.0.1',
         'vine==1.3.0',
-        'webargs==2.0.0'
+        'webargs==5.1.3'
     ],
     extras_require={
         'ssdeep': ['pydeep']
