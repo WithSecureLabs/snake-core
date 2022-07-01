@@ -15,7 +15,7 @@ setup(
     version="1.0.2",
     packages=setuptools.find_packages(exclude=["tests"]),
     install_requires=[
-        'celery==4.3.0',
+        'celery==5.2.2',
         'celery[redis]==4.3.0',
         'marshmallow==3.0.0b7',
         'motor==2.0.0',
