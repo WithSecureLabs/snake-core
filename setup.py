@@ -21,7 +21,7 @@ setup(
         'motor==2.0.0',
         'redis==3.2.1',
         'python-magic==0.4.15',
-        'pyyaml==5.1',
+        'pyyaml==5.4',
         'requests==2.18.4',
         'tornado==5.0.1',
         'vine==1.3.0',
