@@ -45,6 +45,7 @@ setup(
     zip_safe=False,
 
     setup_requires=[
+        'mccabe==0.6.1',
         'flake8',
         'pylint',
         'pytest-runner',
