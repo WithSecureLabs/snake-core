@@ -19,7 +19,7 @@ setup(
         'celery[redis]==4.3.0',
         'marshmallow==3.0.0b7',
         'motor==2.0.0',
-        'redis==3.2.1',
+        'redis==4.5.3',
         'python-magic==0.4.15',
         'pyyaml==5.1',
         'requests==2.18.4',
