@@ -23,7 +23,7 @@ setup(
         'python-magic==0.4.15',
         'pyyaml==5.1',
         'requests==2.18.4',
-        'tornado==5.0.1',
+        'tornado==6.3.2',
         'vine==1.3.0',
         'webargs==2.0.0'
     ],
