@@ -17,8 +17,8 @@ Todo:
 
 """
 import asyncio
-import logging
 import json
+import logging
 import os
 import signal
 import subprocess
@@ -26,18 +26,14 @@ import time
 from datetime import datetime
 
 import pymongo
-from celery import Celery
-from celery import exceptions
-from celery.app import task
-from celery.worker import request
-
-from snake import enums
-from snake import error
-from snake import schema
+from snake import enums, error, schema
 from snake.config import snake_config
 from snake.core import scale_manager
 from snake.engines.mongo import command
 
+from celery import Celery, exceptions
+from celery.app import task
+from celery.worker import request
 
 # pylint: disable=abstract-method
 # pylint: disable=invalid-name
@@ -63,7 +59,9 @@ class SnakeRequest(request.Request):
     seem to supply this out of the box.
     """
 
-    def kill_child_processes(self, parent_pid, sig=signal.SIGKILL):  # pylint: disable=no-self-use
+    def kill_child_processes(
+        self, parent_pid, sig=signal.SIGKILL
+    ):  # pylint: disable=no-self-use
         """Kill child processes for the PID supplied
 
         This will try to look for any children and kill them with the signal
@@ -75,15 +73,18 @@ class SnakeRequest(request.Request):
             sig (:obj:`int`): The signal used to kill the child processes.
         """
         proc = subprocess.run(
-            ['ps', '-o', 'pid', '--ppid', '%d' % parent_pid, '--noheaders'],
+            ["ps", "-o", "pid", "--ppid", "%d" % parent_pid, "--noheaders"],
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE,
+        )
         if proc.returncode:
             return
-        for pid_str in proc.stdout.decode('utf-8').split("\n")[:-1]:
+        for pid_str in proc.stdout.decode("utf-8").split("\n")[:-1]:
             try:
                 os.kill(int(pid_str), sig)
-                time.sleep(2)  # Allow subprocess tasks to flush or we will have defunct until the worker exits
+                time.sleep(
+                    2
+                )  # Allow subprocess tasks to flush or we will have defunct until the worker exits
             except OSError:
                 pass
 
@@ -118,12 +119,12 @@ request.Request.kill_child_processes = SnakeRequest.kill_child_processes
 request.Request.on_timeout = SnakeRequest.on_timeout
 
 
-celery = Celery('snake', **snake_config)
+celery = Celery("snake", **snake_config)
 
 # Hard overrides
-celery.conf.update(accept_content=['pickle'])
-celery.conf.update(result_serializer='pickle')
-celery.conf.update(task_serializer='pickle')
+celery.conf.update(accept_content=["json", "pickle"])
+celery.conf.update(result_serializer="pickle")
+celery.conf.update(task_serializer="pickle")
 
 
 # XXX: The correct way?!
@@ -138,51 +139,78 @@ def execute_command(command_schema):
     Args:
         command_schema (:obj:`CommandSchema`): The command schema to execute.
     """
-    from snake.config import snake_config  # XXX: Reload config, bit hacky but required
-    with pymongo.MongoClient(snake_config['mongodb']) as connection:
+    from snake.config import \
+        snake_config  # XXX: Reload config, bit hacky but required
+
+    with pymongo.MongoClient(snake_config["mongodb"]) as connection:
         try:
             # NOTE: We assume the _output_id is always NULL!
             command_collection = command.CommandCollection(connection.snake)
-            command_output_collection = command.CommandOutputCollection(connection.snake)
-            command_schema['start_time'] = datetime.utcnow()
-            command_schema['status'] = enums.Status.RUNNING
+            command_output_collection = command.CommandOutputCollection(
+                connection.snake
+            )
+            command_schema["start_time"] = datetime.utcnow()
+            command_schema["status"] = enums.Status.RUNNING
             command_schema = schema.CommandSchema().dump(command_schema)
-            command_collection.update(command_schema['sha256_digest'], command_schema['scale'], command_schema['command'], command_schema['args'], command_schema)
+            command_collection.update(
+                command_schema["sha256_digest"],
+                command_schema["scale"],
+                command_schema["command"],
+                command_schema["args"],
+                command_schema,
+            )
             command_schema = schema.CommandSchema().load(command_schema)
-            scale_manager_ = scale_manager.ScaleManager([command_schema['scale']])
-            scale = scale_manager_.get_scale(command_schema['scale'])
-            commands = scale_manager_.get_component(scale, enums.ScaleComponent.COMMANDS)
-            cmd = commands.snake.command(command_schema['command'])
-            output = cmd(args=command_schema['args'], sha256_digest=command_schema['sha256_digest'])
-            command_schema['status'] = enums.Status.SUCCESS
+            scale_manager_ = scale_manager.ScaleManager([command_schema["scale"]])
+            scale = scale_manager_.get_scale(command_schema["scale"])
+            commands = scale_manager_.get_component(
+                scale, enums.ScaleComponent.COMMANDS
+            )
+            cmd = commands.snake.command(command_schema["command"])
+            output = cmd(
+                args=command_schema["args"],
+                sha256_digest=command_schema["sha256_digest"],
+            )
+            command_schema["status"] = enums.Status.SUCCESS
         except error.CommandWarning as err:
-            output = {'error': str(err)}
-            command_schema['status'] = enums.Status.FAILED
+            output = {"error": str(err)}
+            command_schema["status"] = enums.Status.FAILED
             app_log.warning(err)
         except (error.SnakeError, error.MongoError, TypeError) as err:
-            output = {'error': str(err)}
-            command_schema['status'] = enums.Status.FAILED
+            output = {"error": str(err)}
+            command_schema["status"] = enums.Status.FAILED
             app_log.error(err)
-        except (exceptions.SoftTimeLimitExceeded, exceptions.TimeLimitExceeded, BrokenPipeError) as err:
-            output = {'error': 'time limit exceeded'}
-            command_schema['status'] = enums.Status.FAILED
+        except (
+            exceptions.SoftTimeLimitExceeded,
+            exceptions.TimeLimitExceeded,
+            BrokenPipeError,
+        ) as err:
+            output = {"error": "time limit exceeded"}
+            command_schema["status"] = enums.Status.FAILED
             app_log.exception(err)
         except Exception as err:
-            output = {'error': 'a server side error has occurred'}
-            command_schema['status'] = enums.Status.FAILED
+            output = {"error": "a server side error has occurred"}
+            command_schema["status"] = enums.Status.FAILED
             app_log.exception(err)
         else:
             # Test serialising of scale output as it could fail and we need to catch that
             try:
                 json.dumps(output)
             except TypeError as err:
-                output = {'error': 'failed to serialize scale output - {}'.format(err)}
+                output = {"error": "failed to serialize scale output - {}".format(err)}
         finally:
-            command_schema['end_time'] = datetime.utcnow()
+            command_schema["end_time"] = datetime.utcnow()
             command_schema = schema.CommandSchema().dump(command_schema)
-            _output_id = command_output_collection.put(command_schema['command'], bytes(json.dumps(output), 'utf-8'))
-            command_schema['_output_id'] = _output_id
-            command_collection.update(command_schema['sha256_digest'], command_schema['scale'], command_schema['command'], command_schema['args'], command_schema)
+            _output_id = command_output_collection.put(
+                command_schema["command"], bytes(json.dumps(output), "utf-8")
+            )
+            command_schema["_output_id"] = _output_id
+            command_collection.update(
+                command_schema["sha256_digest"],
+                command_schema["scale"],
+                command_schema["command"],
+                command_schema["args"],
+                command_schema,
+            )
 
 
 async def wait_for_task(task):

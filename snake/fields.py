@@ -24,10 +24,10 @@ class SnakeField:
         # Get our kwargs, handle them, remove them, pass it on
         # TODO: We should support ranges for number based items which
         # marshmallow alread supports, we just need to expose in to_dict
-        if 'values' in kwargs:
-            self.__values = kwargs['values']
-            del kwargs['values']
-            kwargs['validate'] = self.values_validator
+        if "values" in kwargs:
+            self.__values = kwargs["values"]
+            del kwargs["values"]
+            kwargs["validate"] = self.values_validator
         else:
             self.__values = []
         super().__init__(*args, **kwargs)
@@ -37,14 +37,16 @@ class SnakeField:
 
     @property
     def values(self):
-        if hasattr(self.__values, '__call__'):
+        if hasattr(self.__values, "__call__"):
             return self.__values()
         else:
             return self.__values
 
     def values_validator(self, value):
         if value not in self.values:
-            raise marshmallow.exceptions.ValidationError("'%s' must be in '%s'" % (value, self.values))
+            raise marshmallow.exceptions.ValidationError(
+                "'%s' must be in '%s'" % (value, self.values)
+            )
 
     def to_dict(self):
         # Resolve Aliases:
@@ -53,29 +55,39 @@ class SnakeField:
         # Bool = Boolean
         # Int = Integer
         type_ = type(self).__name__
-        if type_ is 'Str':
-            type_ = 'string'
-        elif type_ is 'Bool':
-            type_ = 'boolean'
-        elif type_ is 'Int':
-            type_ = 'integer'
+        if type_ == "Str":
+            type_ = "string"
+        elif type_ == "Bool":
+            type_ = "boolean"
+        elif type_ == "Int":
+            type_ = "integer"
         else:
             type_.lower()
         default = self.default if type(self.default) is not type(missing) else None
-        return {
-            'default': default,
-            'required': self.required,
-            'type': type_,
-            'values': self.values if self.values else None
+        scratch = {
+            "dump_default": default,
+            "required": self.required,
+            "type": type_,
+            "values": self.values if self.values else None,
         }
+        if not self.required:
+            scratch["load_default"] = default
+        return scratch
 
 
 # This is a bit grim, but we can dynamically extend all Marshmallow field objects
 for field in __all__:
-    ignore = ['Dict', 'Field']
+    ignore = ["Dict", "Field"]
     if field not in ignore:
         cls = getattr(marshmallow.fields, field)
-        globals()[field] = type(field, (SnakeField,cls,), {})
+        globals()[field] = type(
+            field,
+            (
+                SnakeField,
+                cls,
+            ),
+            {},
+        )
     else:
         cls = getattr(marshmallow.fields, field)
         globals()[field] = type(field, (cls,), {})
@@ -93,8 +105,8 @@ class Enum(Str):  # noqa
     """
 
     def __init__(self, *args, **kwargs):
-        if 'type' in kwargs:
-            enum_type = kwargs.pop('type')
+        if "type" in kwargs:
+            enum_type = kwargs.pop("type")
         else:
             enum_type = args[:-1]
         # super().__init__(self, *args, **kwargs)  # FIXME: Causes a recursion Error
@@ -120,5 +132,5 @@ class ObjectId(Str):  # noqa
     This is used to handle Mongo's object id field.
     """
 
-    def _deserialize(self, val, attr, data):
+    def _deserialize(self, val, attr, data, **kwargs):
         return str(val)

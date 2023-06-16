@@ -9,11 +9,10 @@ Attributes:
     app (:obj:`Celery`): The celery object used by celery.
 """
 
-from celery import bootsteps
-from celery.bin import Option
+from celery import Celery, bootsteps
+from click import Option
 
-from snake.config import config_parser
-from snake.config import snake_config
+from snake.config import config_parser, snake_config
 from snake.core.celery import celery
 
 
@@ -24,17 +23,24 @@ class CustomArgs(bootsteps.Step):
     command line. Mainly used for testing.
     """
 
-    def __init__(self, worker, worker_config, **options):  # pylint: disable=super-init-not-called, unused-argument
+    def __init__(
+        self, worker, worker_config, **options
+    ):  # pylint: disable=super-init-not-called, unused-argument
         if worker_config:
             # NOTE: While the core will have the original settings, as the worker
             # is in effect standalone this should not result in any configuration
             # clashing!
-            config_parser.load_config(worker_config[0])
+            config_parser.load_config(worker_config)
             worker.app.conf.update(**snake_config)
 
 
-app = celery  # pylint: disable=invalid-name
-app.user_options['worker'].add(
-    Option('--worker_config', dest='worker_config', default=None, help='Custom worker configuration')
+app = Celery()  # pylint: disable=invalid-name
+app.conf.update(accept_content=["pickle"])
+app.user_options["worker"].add(
+    Option(
+        ("--worker_config",),
+        default=None,
+        help="Custom worker configuration",
+    )
 )
-app.steps['worker'].add(CustomArgs)
+app.steps["worker"].add(CustomArgs)

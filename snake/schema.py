@@ -7,8 +7,7 @@ import copy
 
 import marshmallow
 
-from snake import enums
-from snake import fields
+from snake import enums, fields
 
 
 class Schema(marshmallow.Schema):
@@ -17,12 +16,18 @@ class Schema(marshmallow.Schema):
     This allows for dynamic creation of a schema which is needed to validate
     arguments within scales.
     """
+
+    class Meta:
+        unknown = marshmallow.INCLUDE
+
     def __init__(self, *args, **kwargs):
-        self.additional_fields = kwargs.pop('fields', None)
+        self.additional_fields = kwargs.pop("fields", None)
         super().__init__(*args, **kwargs)
         if self.additional_fields:
-            self.declared_fields.update(copy.deepcopy(self.additional_fields))  # pylint: disable=no-member
-        self._update_fields(many=self.many)
+            self.declared_fields.update(
+                copy.deepcopy(self.additional_fields)
+            )  # pylint: disable=no-member
+        self._init_fields()
 
 
 class CommandSchema(Schema):
@@ -48,8 +53,10 @@ class CommandSchema(Schema):
     timeout = fields.Int(default=600)
 
     format = fields.Str(type=enums.Format, missing=enums.Format.JSON)
-    output = fields.Raw(dump_only=True, default=None, missing=None)
-    status = fields.Str(type=enums.Status, missing=enums.Status.PENDING, default=enums.Status.PENDING)
+    output = fields.Raw(default=None, missing=None)
+    status = fields.Str(
+        type=enums.Status, missing=enums.Status.PENDING, default=enums.Status.PENDING
+    )
 
     timestamp = fields.DateTime("%Y-%m-%dT%H:%M:%S.%f")
     start_time = fields.DateTime("%Y-%m-%dT%H:%M:%S.%f")
@@ -62,10 +69,10 @@ class FileSchema(Schema):
     This is the schema for the file document stored within the mongo database.
     """
 
-    not_blank = marshmallow.validate.Length(min=1, error='Field cannot be blank')
+    not_blank = marshmallow.validate.Length(min=1, error="Field cannot be blank")
 
     _id = fields.ObjectId(load_only=True)
-    file_type = fields.Enum(required=True, type=enums.FileType, missing=enums.FileType.FILE)
+    file_type = fields.Enum(type=enums.FileType, load_default=enums.FileType.FILE)
 
     name = fields.Str(required=True, validate=not_blank)
 
@@ -82,8 +89,16 @@ class FileSchema(Schema):
 
     submission_type = fields.Str(validate=not_blank, default="unknown")
 
-    parents = fields.Dict(values=fields.List(fields.Str(validate=not_blank)), keys=fields.Str(validate=not_blank), default={})
-    children = fields.Dict(values=fields.List(fields.Str(validate=not_blank)), keys=fields.Str(validate=not_blank), default={})
+    parents = fields.Dict(
+        values=fields.List(fields.Str(validate=not_blank)),
+        keys=fields.Str(validate=not_blank),
+        default={},
+    )
+    children = fields.Dict(
+        values=fields.List(fields.Str(validate=not_blank)),
+        keys=fields.Str(validate=not_blank),
+        default={},
+    )
 
 
 class NoteSchema(Schema):

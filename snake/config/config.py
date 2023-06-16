@@ -9,7 +9,6 @@ from os import path
 
 import pkg_resources
 import yaml
-
 from snake import error
 from snake.config import constants
 
@@ -40,6 +39,10 @@ class Config:
         self.scale_configs = {}
         self.snake_config = {}
         self.load_config(config_file)
+        # FIXME: Crude solution to adding celery 5 support without requiring
+        # breaking changes to config
+        if broker := self.snake_config.get("broker"):
+            self.snake_config["broker_url"] = broker
 
     def load_config(self, config_file=None):
         """Load the snake configuration files.
@@ -58,7 +61,7 @@ class Config:
         # Load base
         config_path = pkg_resources.resource_filename("snake", "data/config/snake.conf")
         try:
-            with open(config_path, 'rb') as stream:
+            with open(config_path, "rb") as stream:
                 base_config = yaml.safe_load(stream)
             self.snake_config.update(base_config)
         except Exception as err:
@@ -72,7 +75,7 @@ class Config:
                 print("Not a valid config_file: %s" % config_file)
                 sys.exit(1)
             try:
-                with open(config_file, 'rb') as stream:
+                with open(config_file, "rb") as stream:
                     snake_config = yaml.safe_load(stream)
                 self.snake_config.update(snake_config)
             except Exception as err:
@@ -80,11 +83,13 @@ class Config:
                 sys.exit(1)
         else:
             # /etc/snake
-            etc_conf = path.join(path.abspath(path.expanduser(constants.ETC_DIR)), 'snake.conf')
+            etc_conf = path.join(
+                path.abspath(path.expanduser(constants.ETC_DIR)), "snake.conf"
+            )
             if path.exists(etc_conf):
                 try:
                     etc_config = {}
-                    with open(etc_conf, 'rb') as stream:
+                    with open(etc_conf, "rb") as stream:
                         etc_config = yaml.safe_load(stream)
                     self.snake_config.update(etc_config)
                 except Exception as err:
@@ -107,21 +112,31 @@ class Config:
         """
         self.scale_configs[scale_name] = {}
         # Load base if we need one
-        config_path = pkg_resources.resource_filename("snake.scales.{}".format(scale_name), "{}.conf".format(scale_name))
+        config_path = pkg_resources.resource_filename(
+            "snake.scales.{}".format(scale_name), "{}.conf".format(scale_name)
+        )
         if path.exists(config_path):
-            with open(config_path, 'rb') as stream:
+            with open(config_path, "rb") as stream:
                 base_config = yaml.safe_load(stream)
             self.scale_configs[scale_name].update(base_config)
 
             # Try and load from etc config
-            etc_conf = path.join(path.abspath(path.expanduser(constants.ETC_DIR)), "scales", "{}.conf".format(scale_name))
+            etc_conf = path.join(
+                path.abspath(path.expanduser(constants.ETC_DIR)),
+                "scales",
+                "{}.conf".format(scale_name),
+            )
             if path.exists(etc_conf):
                 try:
                     etc_config = {}
-                    with open(etc_conf, 'rb') as stream:
+                    with open(etc_conf, "rb") as stream:
                         etc_config = yaml.safe_load(stream)
                     if etc_config is None:  # The config file is empty this is fine
                         etc_config = {}
                     self.scale_configs[scale_name].update(etc_config)
                 except Exception as err:
-                    raise error.SnakeError('failed to load config: {}: {} - {}'.format(etc_conf, err.__class__, err))
+                    raise error.SnakeError(
+                        "failed to load config: {}: {} - {}".format(
+                            etc_conf, err.__class__, err
+                        )
+                    )

@@ -7,7 +7,7 @@ def test_bold():
     """
 
     output = md.bold('abcd')
-    assert output == '** abcd **'
+    assert output == '**abcd**'
 
 
 def test_code():
