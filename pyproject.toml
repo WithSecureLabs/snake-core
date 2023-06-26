@@ -1,0 +1,51 @@
+[tool.poetry]
+name = "snake"
+version = "1.0.2"
+description = "The binary store!"
+authors = ["Alex Kornitzer <alex.kornitzer@withsecure.com>"]
+license = "https://github.com/WithSecureLabs/snake-core/blob/master/LICENSE"
+keywords=["snake", "binary", "malware"]
+repository="https://github.com/WithSecureLabs/snake-core"
+
+include = [
+  "snake/data/**"
+]
+
+
+[tool.poetry.scripts]
+snaked = 'snake.snaked:__main__'
+snake = 'snake.snake_utility:main'
+
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+celery = { version = "^5.3.0", extras = ["redis"] }
+marshmallow="^3.19.0"
+motor="^3.1.2"
+redis="^4.5.5"
+python-magic="^0.4.27"
+pyyaml="^6.0"
+requests="^2.31.0"
+tornado="^6.3.2"
+vine="^5.0.0"
+webargs="^8.2.0"
+
+pydeep = { git="https://github.com/kbandla/pydeep#egg=pydeep", optional=true }
+
+
+[tool.poetry.extras]
+ssdeep = ["pydeep"]
+
+
+[tool.poetry.dev-dependencies]
+black = "^23.3.0"
+mypy = "^1.4.1"
+ruff = "^0.0.275"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.0.0"
+pytest-asyncio = "^0.21.0"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.11.1"

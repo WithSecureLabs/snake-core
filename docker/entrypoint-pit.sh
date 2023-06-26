@@ -53,7 +53,7 @@ if [ "$1" = 'snake-pit' ]; then
   # Run a snake pit as snaked
   CELERYD_LOG_LEVEL="INFO"
   CELERYD_OPTS="--concurrency=8"
-  exec /usr/local/bin/celery worker -A snake.worker --uid snaked --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}
+  exec /usr/local/bin/celery --app snake.worker worker --uid snaked --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS} --worker_config=/etc/snake/snake.conf
 fi
 
 exec "$@"
