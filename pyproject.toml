@@ -20,6 +20,7 @@ snake = 'snake.snake_utility:main'
 [tool.poetry.dependencies]
 python = "^3.11"
 
+boto3 = "^1.26.160"
 celery = { version = "^5.3.0", extras = ["redis"] }
 marshmallow="^3.19.0"
 motor="^3.1.2"

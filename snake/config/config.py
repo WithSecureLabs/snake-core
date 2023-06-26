@@ -39,6 +39,14 @@ class Config:
         self.scale_configs = {}
         self.snake_config = {}
         self.load_config(config_file)
+
+        # FIXME: We should not be validating certain fields like this!
+        STORAGE = ["file", "s3"]
+        if storage := self.snake_config.get("storage"):
+            if storage not in STORAGE:
+                print("storage must be 'file' or 's3")
+                sys.exit(1)
+
         # FIXME: Crude solution to adding celery 5 support without requiring
         # breaking changes to config
         if broker := self.snake_config.get("broker"):

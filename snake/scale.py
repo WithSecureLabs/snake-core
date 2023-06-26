@@ -12,24 +12,18 @@ import logging
 import pkgutil
 import sys
 
-from snake import enums
-from snake import error
-from snake import schema
-from snake import utils
+from snake import enums, error, schema, utils
 from snake.enums import FileType
-
 
 # pylint: disable=too-few-public-methods
 
 
 app_log = logging.getLogger("tornado.application")  # pylint: disable=invalid-name
 
-__all__ = [
-    "FileType"
-]
+__all__ = ["FileType"]
 
 
-class BaseOptions():
+class BaseOptions:
     """The base options class.
 
     This is the base options class used throughout scale components.
@@ -40,7 +34,7 @@ class BaseOptions():
         mime (str, optional): The mime restriction on the function. Defaults to None.
     """
 
-    def __init__(self, args=None, info='No help available!', mime=None):
+    def __init__(self, args=None, info="No help available!", mime=None):
         self.args = {} if args is None or not args else args
         self.info = info
         self.mime = mime
@@ -51,6 +45,7 @@ class CommandOptions(BaseOptions):
 
     Used for command functions in the command component.
     """
+
     pass
 
 
@@ -59,6 +54,7 @@ class PullOptions(BaseOptions):
 
     Used for pull functions in the interface component.
     """
+
     pass
 
 
@@ -67,6 +63,7 @@ class PushOptions(BaseOptions):
 
     Used for push functions in the interface component.
     """
+
     pass
 
 
@@ -112,7 +109,7 @@ class Commands(metaclass=abc.ABCMeta):
             for f in enums.Format:
                 if f == enums.Format.JSON:
                     continue
-                func = '{}_{}'.format(cmd, f)
+                func = "{}_{}".format(cmd, f)
                 if hasattr(self.__cmd, func):
                     fmts += [f]
             return fmts
@@ -134,7 +131,9 @@ class Commands(metaclass=abc.ABCMeta):
             for i in self.__cmd.command_list:
                 if i.__name__ == command_name:
                     return i
-            raise error.CommandError('commands does not support command: {}'.format(command_name))
+            raise error.CommandError(
+                "commands does not support command: {}".format(command_name)
+            )
 
         def command_info(self, cmd):
             """Get the information for a command.
@@ -148,10 +147,12 @@ class Commands(metaclass=abc.ABCMeta):
                 dict: A dictionary containing the: name, args, formats, and info.
             """
             return {
-                'command': cmd.__name__,
-                'args': {k: v.to_dict() for k, v in cmd.cmd_opts.args.items()} if cmd.cmd_opts.args else None,
-                'formats': self.__formats(cmd.__name__),
-                'info': cmd.cmd_opts.info
+                "command": cmd.__name__,
+                "args": {k: v.to_dict() for k, v in cmd.cmd_opts.args.items()}
+                if cmd.cmd_opts.args
+                else None,
+                "formats": self.__formats(cmd.__name__),
+                "info": cmd.cmd_opts.info,
             }
 
         def format(self, fmt, cmd, json):
@@ -174,29 +175,31 @@ class Commands(metaclass=abc.ABCMeta):
                 TypeError: If the format is not supported by the enum.
             """
             if isinstance(json, bytes):
-                json = j.loads(json.decode('utf-8'))
+                json = j.loads(json.decode("utf-8"))
             if fmt not in enums.Format:
-                raise TypeError('format not supported')
+                raise TypeError("format not supported")
             if fmt == enums.Format.JSON:
                 return json
             if fmt == enums.Format.MARKDOWN:
-                func = '%s_markdown' % cmd
+                func = "%s_markdown" % cmd
             elif fmt == enums.Format.PLAINTEXT:
-                func = '%s_plaintext' % cmd
+                func = "%s_plaintext" % cmd
             else:
-                raise TypeError('format not supported')
+                raise TypeError("format not supported")
 
             if not hasattr(self.__cmd, func):
-                raise TypeError('format not supported')
+                raise TypeError("format not supported")
             if json is None:  # Running or pending
                 return json
-            if isinstance(json, dict) and 'error' in json:  # Handle error message formating
+            if (
+                isinstance(json, dict) and "error" in json
+            ):  # Handle error message formating
                 if fmt == enums.Format.JSON:
                     return json
                 if fmt == enums.Format.MARKDOWN:
-                    return '**' + json['error'] + '**'
+                    return "**" + json["error"] + "**"
                 elif fmt == enums.Format.PLAINTEXT:
-                    return json['error']
+                    return json["error"]
 
             return self.__cmd.__getattribute__(func)(json)
 
@@ -218,10 +221,10 @@ class Commands(metaclass=abc.ABCMeta):
         self.command_list = []
         for i in dir(self):
             f = self.__getattribute__(i)
-            if hasattr(f, '__command__'):
+            if hasattr(f, "__command__"):
                 self.command_list.append(f)
         if not self.command_list:
-            raise error.CommandError('commands has no commands defined!')
+            raise error.CommandError("commands has no commands defined!")
         self.snake = self.Snake(self)
 
     @abc.abstractmethod
@@ -277,7 +280,7 @@ class Interface(metaclass=abc.ABCMeta):
             for f in enums.Format:
                 if f == enums.Format.JSON:
                     continue
-                func = '{}_{}'.format(cmd, f)
+                func = "{}_{}".format(cmd, f)
                 if hasattr(self.__intf, func):
                     fmts += [f]
             return fmts
@@ -302,18 +305,18 @@ class Interface(metaclass=abc.ABCMeta):
                 TypeError: If the format is not supported by the enum.
             """
             if fmt not in enums.Format:
-                raise TypeError('format not supported')
+                raise TypeError("format not supported")
             if fmt == enums.Format.JSON:
                 return json
             if fmt == enums.Format.MARKDOWN:
-                func = '%s_markdown' % cmd
+                func = "%s_markdown" % cmd
             elif fmt == enums.Format.PLAINTEXT:
-                func = '%s_plaintext' % cmd
+                func = "%s_plaintext" % cmd
             else:
-                raise TypeError('format not supported')
+                raise TypeError("format not supported")
 
             if not hasattr(self.__intf, func):
-                raise TypeError('format not supported')
+                raise TypeError("format not supported")
             return self.__intf.__getattribute__(func)(json)
 
         def info(self):
@@ -349,7 +352,7 @@ class Interface(metaclass=abc.ABCMeta):
             for i in self.__intf.pull_list:
                 if i.__name__ == puller:
                     return i
-            raise error.InterfaceError('interface does not support puller: %s' % puller)
+            raise error.InterfaceError("interface does not support puller: %s" % puller)
 
         def puller_info(self, cmd):
             """Get the information for a pull command.
@@ -363,11 +366,13 @@ class Interface(metaclass=abc.ABCMeta):
                 dict: A dictionary containing the: command, args, formats, and info.
             """
             return {
-                'command': cmd.__name__,
-                'args': {k: v.to_dict() for k, v in cmd.pull_opts.args.items()} if cmd.pull_opts.args else None,
-                'formats': self.__formats(cmd.__name__),
-                'info': cmd.pull_opts.info,
-                'type': 'pull'
+                "command": cmd.__name__,
+                "args": {k: v.to_dict() for k, v in cmd.pull_opts.args.items()}
+                if cmd.pull_opts.args
+                else None,
+                "formats": self.__formats(cmd.__name__),
+                "info": cmd.pull_opts.info,
+                "type": "pull",
             }
 
         def pusher(self, pusher):
@@ -387,7 +392,7 @@ class Interface(metaclass=abc.ABCMeta):
             for i in self.__intf.push_list:
                 if i.__name__ == pusher:
                     return i
-            raise error.InterfaceError('interface does not support pusher: %s' % pusher)
+            raise error.InterfaceError("interface does not support pusher: %s" % pusher)
 
         def pusher_info(self, cmd):
             """Get the information for a push command.
@@ -401,11 +406,13 @@ class Interface(metaclass=abc.ABCMeta):
                 dict: A dictionary containing the: command, args, formats, and info.
             """
             return {
-                'command': cmd.__name__,
-                'args': {k: v.to_dict() for k, v in cmd.push_opts.args.items()} if cmd.push_opts.args else None,
-                'formats': self.__formats(cmd.__name__),
-                'info': cmd.push_opts.info,
-                'type': 'push'
+                "command": cmd.__name__,
+                "args": {k: v.to_dict() for k, v in cmd.push_opts.args.items()}
+                if cmd.push_opts.args
+                else None,
+                "formats": self.__formats(cmd.__name__),
+                "info": cmd.push_opts.info,
+                "type": "push",
             }
 
     def __init__(self):
@@ -414,9 +421,9 @@ class Interface(metaclass=abc.ABCMeta):
         self.push_list = []
         for i in dir(self):
             f = self.__getattribute__(i)
-            if hasattr(f, '__pull__') and f.__pull__:
+            if hasattr(f, "__pull__") and f.__pull__:
                 self.pull_list.append(f)
-            elif hasattr(f, '__push__') and f.__push__:
+            elif hasattr(f, "__push__") and f.__push__:
                 self.push_list.append(f)
         self.snake = self.Snake(self)
 
@@ -445,28 +452,37 @@ class Scale:  # pylint: disable=too-many-instance-attributes
         supports (list): supported file types (`FileType`).
 
     """
-    def __init__(self, attrs):
-        if 'name' not in attrs:
-            raise error.ScaleError('scale requires name field')
-        if 'description' not in attrs:
-            raise error.ScaleError('scale requires description field')
-        if 'version' not in attrs:
-            raise error.ScaleError('scale requires version field')
-        if 'author' not in attrs:
-            raise error.ScaleError('scale requires author field')
 
-        self.name = attrs['name']
-        self.description = attrs['description']
-        self.version = attrs['version']
-        self.author = attrs['author']
-        self.supports = attrs['supports'] if 'supports' in attrs and attrs['supports'] else [x for x in enums.FileType]
+    def __init__(self, attrs):
+        if "name" not in attrs:
+            raise error.ScaleError("scale requires name field")
+        if "description" not in attrs:
+            raise error.ScaleError("scale requires description field")
+        if "version" not in attrs:
+            raise error.ScaleError("scale requires version field")
+        if "author" not in attrs:
+            raise error.ScaleError("scale requires author field")
+
+        self.name = attrs["name"]
+        self.description = attrs["description"]
+        self.version = attrs["version"]
+        self.author = attrs["author"]
+        self.supports = (
+            attrs["supports"]
+            if "supports" in attrs and attrs["supports"]
+            else [x for x in enums.FileType]
+        )
 
         self.components = {}
 
-        self.caveats = attrs['caveats'] if 'caveats' in attrs else None  # TODO: Remove
+        self.caveats = attrs["caveats"] if "caveats" in attrs else None  # TODO: Remove
 
-        self.scale_requires = attrs['scale_requires'] if 'scale_requires' in attrs else None  # TODO: Remove
-        self.system_requires = attrs['system_requires'] if 'system_requires' in attrs else None  # TODO: Remove
+        self.scale_requires = (
+            attrs["scale_requires"] if "scale_requires" in attrs else None
+        )  # TODO: Remove
+        self.system_requires = (
+            attrs["system_requires"] if "system_requires" in attrs else None
+        )  # TODO: Remove
 
     def info(self):
         """Scale information.
@@ -483,7 +499,7 @@ class Scale:  # pylint: disable=too-many-instance-attributes
             "version": self.version,
             "author": self.author,
             "supports": self.supports,
-            "components": [x for x in self.components]
+            "components": [x for x in self.components],
         }
         return dictionary
 
@@ -499,34 +515,42 @@ class Scale:  # pylint: disable=too-many-instance-attributes
         # order to parse its components
         mod = sys.modules.get("snake.scales.{}".format(self.name))
         if not mod:
-            raise error.ScaleError("failed to locate module: snake.scales.{}".format(self.name))
+            raise error.ScaleError(
+                "failed to locate module: snake.scales.{}".format(self.name)
+            )
         for _imp, mod_name, _is_pkg in pkgutil.iter_modules(mod.__path__):
-            if mod_name == 'commands':
+            if mod_name == "commands":
                 try:
-                    cmd = importlib.import_module('snake.scales.' + self.name + '.commands')
-                    if hasattr(cmd, 'Commands'):
-                        self.components['commands'] = cmd.Commands()
+                    cmd = importlib.import_module(
+                        "snake.scales." + self.name + ".commands"
+                    )
+                    if hasattr(cmd, "Commands"):
+                        self.components["commands"] = cmd.Commands()
                 except error.ScaleError as err:  # TODO: Handle warnings somehow?
-                    app_log.error('%s: %s', self.name, err)
+                    app_log.error("%s: %s", self.name, err)
                 except Exception as err:
                     raise err
-            if mod_name == 'interface':
+            if mod_name == "interface":
                 try:
-                    intf = importlib.import_module('snake.scales.' + self.name + '.interface')
-                    if hasattr(intf, 'Interface'):
-                        self.components['interface'] = intf.Interface()
+                    intf = importlib.import_module(
+                        "snake.scales." + self.name + ".interface"
+                    )
+                    if hasattr(intf, "Interface"):
+                        self.components["interface"] = intf.Interface()
                 except error.ScaleError as err:  # TODO: Handle warnings somehow?
-                    app_log.error('%s: %s', self.name, err)
+                    app_log.error("%s: %s", self.name, err)
                 except Exception as err:
                     raise err
 
-            if mod_name == 'upload':
+            if mod_name == "upload":
                 try:
-                    upld = importlib.import_module('snake.scales.' + self.name + '.upload')
-                    if hasattr(upld, 'Upload'):
-                        self.components['upload'] = upld.Upload()
+                    upld = importlib.import_module(
+                        "snake.scales." + self.name + ".upload"
+                    )
+                    if hasattr(upld, "Upload"):
+                        self.components["upload"] = upld.Upload()
                 except error.ScaleError as err:  # TODO: Handle warnings somehow?
-                    app_log.error('%s: %s', self.name, err)
+                    app_log.error("%s: %s", self.name, err)
                 except Exception as err:
                     raise err
 
@@ -563,8 +587,10 @@ class Upload(metaclass=abc.ABCMeta):
                 dict: information about upload.
             """
             return {
-                'args': {k: v.to_dict() for k, v in self.__upld.arguments().items()} if self.__upld.arguments() else None,
-                'info': self.__upld.info()
+                "args": {k: v.to_dict() for k, v in self.__upld.arguments().items()}
+                if self.__upld.arguments()
+                else None,
+                "info": self.__upld.info(),
             }
 
     def __init__(self):
@@ -637,6 +663,7 @@ def command(cmd_dict=None):
     Returns:
         func: The wrapped command function.
     """
+
     def decorator(func):
         """Decorates the function."""
         # Load the attached dictionary if there is one, otherwise create
@@ -650,37 +677,53 @@ def command(cmd_dict=None):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             """Wraps the function."""
-            if args and 'args' in kwargs:
-                raise TypeError("%s got multiple values for argument 'args'" % func.__name__)
-            elif 'args' in kwargs:
-                args_ = kwargs['args']
+            if args and "args" in kwargs:
+                raise TypeError(
+                    "%s got multiple values for argument 'args'" % func.__name__
+                )
+            elif "args" in kwargs:
+                args_ = kwargs["args"]
             else:
                 args_ = args[0]
             args_ = copy.deepcopy(args_)
-            if len(args) > 1 and 'sha256_digest' in kwargs:
-                raise TypeError("%s got multiple values for argument 'sha256_digest'" % func.__name__)
-            elif 'sha256_digest' in kwargs:
-                file_storage = utils.FileStorage(kwargs['sha256_digest'])
-            else:
-                file_storage = utils.FileStorage(args[1])
-            opts = func.cmd_opts
-            for k, v in cmd_opts.args.items():
-                if k not in args_ and v.has_default():
-                    args_[k] = v.default
-            if cmd_opts.args.keys():
-                args_ = schema.Schema(fields=copy.deepcopy(cmd_opts.args)).load(args_)
+            try:
+                file_storage = None
+                if len(args) > 1 and "sha256_digest" in kwargs:
+                    raise TypeError(
+                        "%s got multiple values for argument 'sha256_digest'"
+                        % func.__name__
+                    )
+                elif "sha256_digest" in kwargs:
+                    file_storage = utils.FileStorage(kwargs["sha256_digest"])
+                else:
+                    file_storage = utils.FileStorage(args[1])
+                opts = func.cmd_opts
+                for k, v in cmd_opts.args.items():
+                    if k not in args_ and v.has_default():
+                        args_[k] = v.default
+                if cmd_opts.args.keys():
+                    args_ = schema.Schema(fields=copy.deepcopy(cmd_opts.args)).load(
+                        args_
+                    )
 
-            self.check()
+                self.check()
 
-            output = func(args=args_, file=file_storage, opts=opts, self=self)
+                output = func(args=args_, file=file_storage, opts=opts, self=self)
+            finally:
+                if file_storage:
+                    file_storage.cleanup()
             if not isinstance(output, dict) and not isinstance(output, list):
-                raise TypeError("%s failed to return a dictionary or list" % func.__name__)
+                raise TypeError(
+                    "%s failed to return a dictionary or list" % func.__name__
+                )
             return output
+
         wrapper.__wrapped__ = func
         wrapper.__command__ = True
-        if not hasattr(wrapper, '__autorun__'):
+        if not hasattr(wrapper, "__autorun__"):
             wrapper.__autorun__ = False
         return wrapper
+
     return decorator
 
 
@@ -699,6 +742,7 @@ def pull(pull_dict=None):
     Returns:
         func: The wrapped command function.
     """
+
     def decorator(func):
         """Decorates the function."""
         # Load the attached dictionary if there is one, otherwise create
@@ -712,35 +756,51 @@ def pull(pull_dict=None):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             """Wraps the function."""
-            if args and 'args' in kwargs:
-                raise TypeError("%s got multiple values for argument 'args'" % func.__name__)
-            elif 'args' in kwargs:
-                args_ = kwargs['args']
+            if args and "args" in kwargs:
+                raise TypeError(
+                    "%s got multiple values for argument 'args'" % func.__name__
+                )
+            elif "args" in kwargs:
+                args_ = kwargs["args"]
             else:
                 args_ = args[0]
             args_ = copy.deepcopy(args_)
-            if len(args) > 1 and 'sha256_digest' in kwargs:
-                raise TypeError("%s got multiple values for argument 'sha256_digest'" % func.__name__)
-            elif 'sha256_digest' in kwargs:
-                file_storage = utils.FileStorage(kwargs['sha256_digest'])
-            else:
-                file_storage = utils.FileStorage(args[1])
-            opts = func.pull_opts
-            for k, v in pull_opts.args.items():
-                if k not in args_ and v.has_default():
-                    args_[k] = v.default
-            if pull_opts.args.keys():
-                args_ = schema.Schema(fields=copy.deepcopy(pull_opts.args)).load(args_)
+            try:
+                file_storage = None
+                if len(args) > 1 and "sha256_digest" in kwargs:
+                    raise TypeError(
+                        "%s got multiple values for argument 'sha256_digest'"
+                        % func.__name__
+                    )
+                elif "sha256_digest" in kwargs:
+                    file_storage = utils.FileStorage(kwargs["sha256_digest"])
+                else:
+                    file_storage = utils.FileStorage(args[1])
+                opts = func.pull_opts
+                for k, v in pull_opts.args.items():
+                    if k not in args_ and v.has_default():
+                        args_[k] = v.default
+                if pull_opts.args.keys():
+                    args_ = schema.Schema(fields=copy.deepcopy(pull_opts.args)).load(
+                        args_
+                    )
 
-            self.check()
+                self.check()
 
-            output = func(args=args_, file=file_storage, opts=opts, self=self)
+                output = func(args=args_, file=file_storage, opts=opts, self=self)
+            finally:
+                if file_storage:
+                    file_storage.cleanup()
             if not isinstance(output, dict) and not isinstance(output, list):
-                raise TypeError("%s failed to return a dictionary or list" % func.__name__)
+                raise TypeError(
+                    "%s failed to return a dictionary or list" % func.__name__
+                )
             return output
+
         wrapper.__wrapped__ = func
         wrapper.__pull__ = True
         return wrapper
+
     return decorator
 
 
@@ -759,6 +819,7 @@ def push(push_dict=None):
     Returns:
         func: The wrapped command function.
     """
+
     def decorator(func):
         """Decorates the function."""
         # Load the attached dictionary if there is one, otherwise create
@@ -772,35 +833,51 @@ def push(push_dict=None):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             """Wraps the function."""
-            if args and 'args' in kwargs:
-                raise TypeError("%s got multiple values for argument 'args'" % func.__name__)
-            elif 'args' in kwargs:
-                args_ = kwargs['args']
+            if args and "args" in kwargs:
+                raise TypeError(
+                    "%s got multiple values for argument 'args'" % func.__name__
+                )
+            elif "args" in kwargs:
+                args_ = kwargs["args"]
             else:
                 args_ = args[0]
             args_ = copy.deepcopy(args_)
-            if len(args) > 1 and 'sha256_digest' in kwargs:
-                raise TypeError("%s got multiple values for argument 'sha256_digest'" % func.__name__)
-            elif 'sha256_digest' in kwargs:
-                file_storage = utils.FileStorage(kwargs['sha256_digest'])
-            else:
-                file_storage = utils.FileStorage(args[1])
-            opts = func.push_opts
-            for k, v in push_opts.args.items():
-                if k not in args_ and v.has_default():
-                    args_[k] = v.default
-            if push_opts.args.keys():
-                args_ = schema.Schema(fields=copy.deepcopy(push_opts.args)).load(args_)
+            try:
+                file_storage = None
+                if len(args) > 1 and "sha256_digest" in kwargs:
+                    raise TypeError(
+                        "%s got multiple values for argument 'sha256_digest'"
+                        % func.__name__
+                    )
+                elif "sha256_digest" in kwargs:
+                    file_storage = utils.FileStorage(kwargs["sha256_digest"])
+                else:
+                    file_storage = utils.FileStorage(args[1])
+                opts = func.push_opts
+                for k, v in push_opts.args.items():
+                    if k not in args_ and v.has_default():
+                        args_[k] = v.default
+                if push_opts.args.keys():
+                    args_ = schema.Schema(fields=copy.deepcopy(push_opts.args)).load(
+                        args_
+                    )
 
-            self.check()
+                self.check()
 
-            output = func(args=args_, file=file_storage, opts=opts, self=self)
+                output = func(args=args_, file=file_storage, opts=opts, self=self)
+            finally:
+                if file_storage:
+                    file_storage.cleanup()
             if not isinstance(output, dict) and not isinstance(output, list):
-                raise TypeError("%s failed to return a dictionary or list" % func.__name__)
+                raise TypeError(
+                    "%s failed to return a dictionary or list" % func.__name__
+                )
             return output
+
         wrapper.__wrapped__ = func
         wrapper.__push__ = True
         return wrapper
+
     return decorator
 
 

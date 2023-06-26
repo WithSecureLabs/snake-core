@@ -85,6 +85,9 @@ def main(
 
     # Check all dirs exist otherwise give up
     keys = ["cache_dir", "file_db", "log_dir"]
+    if storage := config_parser.snake_config.get("storage"):
+        if storage == "s3":
+            keys = ["cache_dir", "log_dir"]
     for key in keys:
         directory = path.abspath(path.expanduser(config_parser.snake_config[key]))
         if not path.exists(directory):
