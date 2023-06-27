@@ -28,6 +28,7 @@ class UploadFileSchema(schema.FileSchema):
 class UploadFileHandler(snake_handler.StreamHandler):
     """Extends `SnakeHandler`."""
 
+    @snake_handler.authenticated
     @tornadoparser.use_args(UploadFileSchema())
     async def post(self, data):
         if data == []:
@@ -95,6 +96,7 @@ class UploadFileHandler(snake_handler.StreamHandler):
 class UploadFilesHandler(snake_handler.StreamHandler):
     """Extends `SnakeHandler`."""
 
+    @snake_handler.authenticated
     async def post(self):
         # XXX: Does not support extraction atm
         #  curl 'http://127.0.0.1:5000/upload/files' -F '0=@./file1' -F '1=@./file2' -F 'data={0:{"name": "file1"}, 1:{"name": "file2"}}'
@@ -169,6 +171,7 @@ class UploadFilesHandler(snake_handler.StreamHandler):
 class UploadMemoryHandler(snake_handler.StreamHandler):
     """Extends `SnakeHandler`."""
 
+    @snake_handler.authenticated
     @tornadoparser.use_args(UploadFileSchema())
     async def post(self, data):
         if data == []:

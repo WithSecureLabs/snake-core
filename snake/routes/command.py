@@ -41,6 +41,7 @@ def validate_args(cmd, args):
 class CommandHandler(snake_handler.SnakeHandler):
     """Extends `SnakeHandler`."""
 
+    @snake_handler.authenticated
     @tornadoparser.use_args(
         {
             # 'args': fields.Dict(required=False, default={}, missing={}),
@@ -94,6 +95,7 @@ class CommandHandler(snake_handler.SnakeHandler):
         self.jsonify({"command": document})
         self.finish()
 
+    @snake_handler.authenticated
     @tornadoparser.use_args(
         {
             "args": fields.Dict(required=False, default={}, missing={}),
@@ -221,6 +223,7 @@ class CommandsHandler(snake_handler.SnakeHandler):
             documents += [doc]
         return documents
 
+    @snake_handler.authenticated
     @tornadoparser.use_args(GetSchema())
     async def get(self, data):  # pylint: disable=too-many-branches
         # XXX: This whole function is shit
@@ -301,6 +304,7 @@ class CommandsHandler(snake_handler.SnakeHandler):
         self.jsonify({"commands": documents})
         self.finish()
 
+    @snake_handler.authenticated
     # pylint: disable=invalid-name
     @tornadoparser.use_args(CommandsSchema(many=True))
     async def post(

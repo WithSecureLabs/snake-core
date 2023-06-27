@@ -8,27 +8,80 @@ Attributes:
     request handler.
 """
 
+import functools
 import json
 import logging
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from os import path
+from typing import Awaitable, Callable, Optional
 
+import jwt
+import requests
 from bson import objectid
-from tornado import escape
-from tornado import httputil
-from tornado import web
-from webargs import tornadoparser
-
 from snake import error
-from snake.config import constants
-from snake.config import snake_config
-
+from snake.config import constants, snake_config
+from tornado import escape, httputil, web
+from webargs import tornadoparser
 
 app_log = logging.getLogger("tornado.application")  # pylint: disable=invalid-name
 gen_log = logging.getLogger("tornado.general")  # pylint: disable=invalid-name
 
 TAIL_SIZE = 50
+
+CACHE = None
+
+
+def authenticated(
+    method: Callable[..., Optional[Awaitable[None]]]
+) -> Callable[..., Optional[Awaitable[None]]]:
+    """Authentication route guard.
+
+    This will check to see whether an user is authenticated, it will not check
+    for permissions, as ACLs are not supported.
+    """
+
+    @functools.wraps(method)
+    def wrapper(  # type: ignore
+        self: web.RequestHandler, *args, **kwargs
+    ) -> Optional[Awaitable[None]]:
+        if authentication := snake_config.get("authentication"):
+            if authentication.get("scheme") == "oauth":
+                if not (value := self.request.headers.get("Authentication")):
+                    raise web.HTTPError(403)
+                if not value.startswith("Bearer "):
+                    raise web.HTTPError(403)
+                global CACHE
+                if not CACHE or CACHE["expires"] < datetime.now():
+                    response = requests.get(authentication.get("openid_url")).json()
+                    jwks = requests.get(response["jwks_uri"]).json()["keys"]
+                    CACHE = {
+                        "expires": datetime.now() + timedelta(days=1),
+                        "jwks": [jwt.PyJWK(jwk) for jwk in jwks],
+                    }
+                token = value.removeprefix("Bearer ")
+                header = jwt.get_unverified_header(token)
+                if not (kid := header.get("kid")):
+                    raise web.HTTPError(403)
+                jwk = None
+                for j in CACHE.get("jwks", []):  # type: ignore
+                    if j.key_id == kid:
+                        jwk = j
+                        break
+                if not jwk:
+                    raise web.HTTPError(403)
+                decoded = jwt.decode(
+                    token,
+                    jwk.key,
+                    algorithms=header.get("alg"),
+                    options={"verify_aud": False},
+                )
+                self.current_user = decoded.get("preferred_username")
+                if not self.current_user:
+                    raise web.HTTPError(403)
+        return method(self, *args, **kwargs)
+
+    return wrapper
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -63,15 +116,18 @@ class SnakeHandler(web.RequestHandler):  # pylint: disable=abstract-method
 
     def _write_error_generic(self, status_code):
         self.set_status(status_code)
-        self.write({
-            "status": "error",
-            "message": "snake has encountered an Error!"
-        })
+        self.write({"status": "error", "message": "snake has encountered an Error!"})
+
+    def get_current_user(self):
+        return None
 
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "access-control-allow-origin, x-requested-with, content-type")
-        self.set_header('Access-Control-Allow-Methods', 'GET, OPTIONS, PATCH, POST')
+        self.set_header(
+            "Access-Control-Allow-Headers",
+            "access-control-allow-origin, x-requested-with, content-type",
+        )
+        self.set_header("Access-Control-Allow-Methods", "GET, OPTIONS, PATCH, POST")
 
     def options(self, *args, **kwargs):
         # NOTE: We only want to push CORS stuff so we don't care about args
@@ -92,11 +148,11 @@ class SnakeHandler(web.RequestHandler):  # pylint: disable=abstract-method
         """
         _filter = []
         for arg in args:
-            if 'filter' in arg:
+            if "filter" in arg:
                 try:
-                    f_key = arg.split('[')[1].split(']')[0]
+                    f_key = arg.split("[")[1].split("]")[0]
                     for f_arg in self.get_arguments(arg):
-                        if '$regex' in f_arg:
+                        if "$regex" in f_arg:
                             _filter += [{f_key: escape.json_decode(f_arg)}]
                         else:
                             _filter += [{f_key: f_arg}]
@@ -107,7 +163,7 @@ class SnakeHandler(web.RequestHandler):  # pylint: disable=abstract-method
         elif len(_filter) == 1:
             _filter = _filter[0]
         else:
-            if operator == 'or':
+            if operator == "or":
                 _filter = {"$or": _filter}
             else:
                 _filter = {"$and": _filter}
@@ -116,8 +172,8 @@ class SnakeHandler(web.RequestHandler):  # pylint: disable=abstract-method
     def create_args(self, args):
         _args = {}
         for arg in args:
-            if 'args' == arg[:4]:
-                a_key = arg.split('[')[1].split(']')[0]
+            if "args" == arg[:4]:
+                a_key = arg.split("[")[1].split("]")[0]
                 _args[a_key] = self.get_arguments(arg)[0]
         return _args
 
@@ -143,10 +199,7 @@ class SnakeHandler(web.RequestHandler):  # pylint: disable=abstract-method
         Args:
             data (obj): The data to turn into json.
         """
-        resp = {
-            "status": "success",
-            "data": data
-        }
+        resp = {"status": "success", "data": data}
         self.write(JSONEncoder(sort_keys=True, indent=True).encode(resp))
 
     def write_error(self, status_code, **kwargs):
@@ -158,15 +211,12 @@ class SnakeHandler(web.RequestHandler):  # pylint: disable=abstract-method
             status_code (int): The error code.
             **kwargs: Arbitrary keyword arguments.
         """
-        if 'exc_info' not in kwargs:
+        if "exc_info" not in kwargs:
             self._write_error_generic(status_code)
             return
-        _, err, _ = kwargs['exc_info']
+        _, err, _ = kwargs["exc_info"]
         if isinstance(err, tornadoparser.HTTPError):  # Handle webargs/marshmallow fails
-            self.write(self._jsonify({
-                "status": "fail",
-                "message": err.messages
-            }))
+            self.write(self._jsonify({"status": "fail", "message": err.messages}))
             return
         if not isinstance(err, error.SnakeError):
             self._write_error_generic(status_code)
@@ -175,10 +225,7 @@ class SnakeHandler(web.RequestHandler):  # pylint: disable=abstract-method
             self.set_status(status_code)
         else:
             self.set_status(err.status_code)
-        self.write(self._jsonify({
-            "status": "error",
-            "message": err.message
-        }))
+        self.write(self._jsonify({"status": "error", "message": err.message}))
         return
 
     def write_warning(self, message, status_code=400, data=None):
@@ -191,13 +238,10 @@ class SnakeHandler(web.RequestHandler):  # pylint: disable=abstract-method
             status_code (int, optional): The status code. Defaults to 400
             data (obj): Additional data for the warning.
         """
-        body = {
-            "status": "error",
-            "message": message
-        }
+        body = {"status": "error", "message": message}
         _message = str(message)
         if data:
-            _message += '\n'
+            _message += "\n"
             if isinstance(data, dict):
                 _message += self._jsonify(data)
             elif isinstance(data, list):
@@ -208,7 +252,7 @@ class SnakeHandler(web.RequestHandler):  # pylint: disable=abstract-method
         app_log.warning(_message)
 
         if data:
-            body['data'] = data
+            body["data"] = data
         self.set_status(status_code)
         self.write(self._jsonify(body))
 
@@ -221,7 +265,7 @@ class DefaultHandler(SnakeHandler):  # pylint: disable=abstract-method
     """
 
     async def prepare(self):
-        self.write_warning({'api_version': constants.API_VERSION}, 404)
+        self.write_warning({"api_version": constants.API_VERSION}, 404)
         self.finish()
 
 
@@ -244,7 +288,7 @@ class StreamHandler(SnakeHandler):
         stream (:obj:`Stream`): The streaming state.
     """
 
-    class Stream():  # pylint: disable=too-few-public-methods
+    class Stream:  # pylint: disable=too-few-public-methods
         """The stream state
 
         This is used to store the state of the streaming data.
@@ -257,6 +301,7 @@ class StreamHandler(SnakeHandler):
             tail (bytes): The tail of the previous chunk.
             working_dir (obj): The `TemporaryDirectory` where the data is being saved to.
         """
+
         def __init__(self):
             self.boundary = None
             self.header = bytes()
@@ -273,17 +318,24 @@ class StreamHandler(SnakeHandler):
         """
         self.bytes_read = 0
         self.content_length = 0
-        self.content_type = ''
+        self.content_type = ""
         self.data = bytes()
         self.error = None
         self.stream = None
 
-        if self.request.headers and 'Content-Encoding' in self.request.headers:
-            gen_log.warning("Unsupported Content-Encoding: %s", self.request.headers['Content-Encoding'])
+        if self.request.headers and "Content-Encoding" in self.request.headers:
+            gen_log.warning(
+                "Unsupported Content-Encoding: %s",
+                self.request.headers["Content-Encoding"],
+            )
             return
-        if self.request.headers and 'Content-Type' in self.request.headers:
-            self.content_length = int(self.request.headers['Content-Length']) if 'Content-Length' in self.request.headers else 0
-            self.content_type = self.request.headers['Content-Type']
+        if self.request.headers and "Content-Type" in self.request.headers:
+            self.content_length = (
+                int(self.request.headers["Content-Length"])
+                if "Content-Length" in self.request.headers
+                else 0
+            )
+            self.content_type = self.request.headers["Content-Type"]
             if self.content_type.startswith("application/x-www-form-urlencoded"):
                 return
             elif self.content_type.startswith("multipart/form-data"):
@@ -297,27 +349,35 @@ class StreamHandler(SnakeHandler):
                 for field in fields:
                     k, _, v = field.strip().partition("=")
                     if k == "boundary" and v:
-                        boundary = bytes(v, 'utf8')
+                        boundary = bytes(v, "utf8")
                 if not boundary:
-                    raise error.SnakeError('Content boundary not found')
+                    raise error.SnakeError("Content boundary not found")
                 if boundary.startswith(b'"') and boundary.endswith(b'"'):
                     boundary = boundary[1:-1]
                 self.stream.boundary = boundary
-                self.stream.working_dir = tempfile.TemporaryDirectory(dir=path.abspath(path.expanduser(snake_config['cache_dir'])))
+                self.stream.working_dir = tempfile.TemporaryDirectory(
+                    dir=path.abspath(path.expanduser(snake_config["cache_dir"]))
+                )
             else:
-                self.error = error.SnakeError('Unsupported Content-Type: %s' % self.content_type)
+                self.error = error.SnakeError(
+                    "Unsupported Content-Type: %s" % self.content_type
+                )
 
     # NOTE: We are live parsing the request body here using a overlapping
     # sliding window! We need to make sure that this has no errors or we are
     # gonna ingest files incorrectly!!! If anything bad happens we are ducked!
-    def data_received(self, chunk):  # pylint: disable=too-many-branches, too-many-statements
+    def data_received(
+        self, chunk
+    ):  # pylint: disable=too-many-branches, too-many-statements
         if self.error:
             raise self.error  # pylint: disable=raising-bad-type
 
         self.bytes_read += len(chunk)
 
-        if len(self.data) > 104857600:  # Ensure the someone is not trying to fill RAM, 100MB
-            raise error.SnakeError('Content-Length too large (truncated)')
+        if (
+            len(self.data) > 104857600
+        ):  # Ensure the someone is not trying to fill RAM, 100MB
+            raise error.SnakeError("Content-Length too large (truncated)")
 
         if self.stream:  # Cache files to disk
             chunk = self.stream.tail + chunk
@@ -325,18 +385,18 @@ class StreamHandler(SnakeHandler):
             i = 0
             while i < chunk_len:
                 if self.stream.state == 0:  # Find start of header
-                    soh = chunk.find(b'--' + self.stream.boundary, i)
+                    soh = chunk.find(b"--" + self.stream.boundary, i)
                     if soh != -1:
-                        self.data += chunk[soh:soh + len(self.stream.boundary) + 4]
+                        self.data += chunk[soh : soh + len(self.stream.boundary) + 4]
                         i = soh + len(self.stream.boundary) + 4
                         self.stream.state = 1
                         continue
                 elif self.stream.state == 1:  # Find end of header
-                    eoh = chunk.find(b'\r\n\r\n', i)
+                    eoh = chunk.find(b"\r\n\r\n", i)
                     if eoh != -1:
-                        self.stream.header += chunk[i:eoh + 4]
+                        self.stream.header += chunk[i : eoh + 4]
                         i = eoh + 4
-                        if b'filename=' in self.stream.header:  # We have a file
+                        if b"filename=" in self.stream.header:  # We have a file
                             self.stream.state = 2
                         else:
                             self.stream.state = 3
@@ -344,18 +404,20 @@ class StreamHandler(SnakeHandler):
                         self.stream.header = bytes()
                         continue
                 elif self.stream.state == 2:  # Handle file based content
-                    soh = chunk.find(b'--' + self.stream.boundary, i)
+                    soh = chunk.find(b"--" + self.stream.boundary, i)
                     if soh != -1:
-                        f_path = path.join(self.stream.working_dir.name, str(self.stream.file_count))
-                        with open(f_path, 'a+b') as f:
-                            f.write(chunk[i:soh - 2])  # -2 drops the extra '\r\n'
-                        self.data += bytes(f_path + '\r\n', 'utf-8')
+                        f_path = path.join(
+                            self.stream.working_dir.name, str(self.stream.file_count)
+                        )
+                        with open(f_path, "a+b") as f:
+                            f.write(chunk[i : soh - 2])  # -2 drops the extra '\r\n'
+                        self.data += bytes(f_path + "\r\n", "utf-8")
                         self.stream.file_count += 1
                         i = soh
                         self.stream.state = 0
                         continue
                 elif self.stream.state == 3:  # Handle all other content
-                    soh = chunk.find(b'--' + self.stream.boundary, i)
+                    soh = chunk.find(b"--" + self.stream.boundary, i)
                     if soh != -1:
                         self.data += chunk[i:soh]
                         i = soh
@@ -365,14 +427,16 @@ class StreamHandler(SnakeHandler):
                 # Handle the overlapping tail
                 if i + TAIL_SIZE < chunk_len:
                     if self.stream.state == 2:
-                        f_path = path.join(self.stream.working_dir.name, str(self.stream.file_count))
-                        with open(f_path, 'a+b') as f:
-                            f.write(chunk[i:chunk_len - TAIL_SIZE])
+                        f_path = path.join(
+                            self.stream.working_dir.name, str(self.stream.file_count)
+                        )
+                        with open(f_path, "a+b") as f:
+                            f.write(chunk[i : chunk_len - TAIL_SIZE])
                     elif self.stream.state == 1:
-                        self.stream.header += chunk[i:chunk_len - TAIL_SIZE]
+                        self.stream.header += chunk[i : chunk_len - TAIL_SIZE]
                     else:
-                        self.data += chunk[i:chunk_len - TAIL_SIZE]
-                    self.stream.tail = chunk[chunk_len - TAIL_SIZE:]
+                        self.data += chunk[i : chunk_len - TAIL_SIZE]
+                    self.stream.tail = chunk[chunk_len - TAIL_SIZE :]
                     i += chunk_len
                 else:
                     self.stream.tail = chunk[i:]
@@ -381,11 +445,13 @@ class StreamHandler(SnakeHandler):
             self.data += chunk
 
         if self.bytes_read >= self.content_length:  # Finished, parse the new content
-            httputil.parse_body_arguments(self.content_type,
-                                          self.data,
-                                          self.request.body_arguments,
-                                          self.request.files,
-                                          headers=None)
+            httputil.parse_body_arguments(
+                self.content_type,
+                self.data,
+                self.request.body_arguments,
+                self.request.files,
+                headers=None,
+            )
             for k, v in self.request.body_arguments.items():
                 self.request.arguments.setdefault(k, []).extend(v)
 

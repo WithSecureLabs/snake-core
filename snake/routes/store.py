@@ -15,6 +15,7 @@ from webargs import tornadoparser
 class StoreSampleHandler(snake_handler.SnakeHandler):
     """Extends `SnakeHandler`."""
 
+    @snake_handler.authenticated
     async def get(self, sha256_digest):
         document = await db.async_file_collection.select(sha256_digest)
         if not document:
@@ -31,6 +32,7 @@ class StoreSampleHandler(snake_handler.SnakeHandler):
 class StoreHandler(snake_handler.SnakeHandler):
     """Extends `SnakeHandler`."""
 
+    @snake_handler.authenticated
     @tornadoparser.use_args(
         {
             # filter[field]: str

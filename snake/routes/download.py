@@ -17,6 +17,7 @@ from snake.utils import file_storage as fs
 class DownloadHandler(snake_handler.SnakeHandler):
     """Extends `SnakeHandler`."""
 
+    @snake_handler.authenticated
     async def get(self, sha256_digest):
         document = await async_file_collection.select(sha256_digest)
         if not document:

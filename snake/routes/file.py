@@ -18,6 +18,7 @@ from webargs import tornadoparser
 class FileHexHandler(snake_handler.SnakeHandler):
     """Extends `SnakeHandler`."""
 
+    @snake_handler.authenticated
     async def get(self, sha256_digest):
         document = await db.async_file_collection.select(sha256_digest)
         if not document or document["file_type"] != enums.FileType.FILE:
@@ -35,6 +36,7 @@ class FileHexHandler(snake_handler.SnakeHandler):
 class FileHandler(snake_handler.SnakeHandler):
     """Extends `SnakeHandler`."""
 
+    @snake_handler.authenticated
     async def get(self, sha256_digest):
         document = await db.async_file_collection.select(sha256_digest)
         if not document or document["file_type"] != enums.FileType.FILE:
@@ -47,6 +49,7 @@ class FileHandler(snake_handler.SnakeHandler):
         self.jsonify({"file": document})
         self.finish()
 
+    @snake_handler.authenticated
     async def delete(self, sha256_digest):
         document = await db.async_file_collection.select(sha256_digest)
         if not document or document["file_type"] != enums.FileType.FILE:
@@ -71,6 +74,7 @@ class FileHandler(snake_handler.SnakeHandler):
         self.jsonify(None)
         self.finish()
 
+    @snake_handler.authenticated
     async def patch(self, sha256_digest):
         # NOTE: We only allow updating of 'description', 'name' and 'tags'
         document = await db.async_file_collection.select(sha256_digest)
@@ -96,6 +100,7 @@ class FileHandler(snake_handler.SnakeHandler):
         self.jsonify({"file": document})
         self.finish()
 
+    @snake_handler.authenticated
     async def put(self, sha256_digest):
         # NOTE: This is a pseudo PUT as we won't allow clearing of fixed fields
         document = await db.async_file_collection.select(sha256_digest)
@@ -130,6 +135,7 @@ class FileHandler(snake_handler.SnakeHandler):
 class FilesHandler(snake_handler.SnakeHandler):
     """Extends `SnakeHandler`."""
 
+    @snake_handler.authenticated
     @tornadoparser.use_args(
         {
             "limit": fields.Str(required=False),
