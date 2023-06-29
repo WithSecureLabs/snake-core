@@ -142,7 +142,8 @@ class FilesHandler(snake_handler.SnakeHandler):
             "operator": fields.Str(required=False, missing="and"),
             "order": fields.Int(required=False, missing=-1),
             "sort": fields.Str(required=False),
-        }
+        },
+        location="querystring",
     )
     async def get(self, data):
         documents = []

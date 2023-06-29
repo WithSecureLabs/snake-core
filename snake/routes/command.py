@@ -50,7 +50,8 @@ class CommandHandler(snake_handler.SnakeHandler):
             "output": fields.Bool(required=False, default=True, missing=True),
             "scale": fields.Str(required=True),
             "sha256_digest": fields.Str(required=True),
-        }
+        },
+        location="querystring",
     )
     async def get(self, data):
         # NOTE: Tornado/Marshmallow does not like Dict in args, will have to parse manually
@@ -224,7 +225,10 @@ class CommandsHandler(snake_handler.SnakeHandler):
         return documents
 
     @snake_handler.authenticated
-    @tornadoparser.use_args(GetSchema())
+    @tornadoparser.use_args(
+        GetSchema(),
+        location="querystring",
+    )
     async def get(self, data):  # pylint: disable=too-many-branches
         # XXX: This whole function is shit
         # TODO: Should further clean this

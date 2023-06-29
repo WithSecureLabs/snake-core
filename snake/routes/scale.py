@@ -259,7 +259,8 @@ class ScalesHandler(snake_handler.SnakeHandler):
         {
             "file_type": fields.Enum(type=enums.FileType, missing=None, required=None),
             "reload": fields.Boolean(missing=False, required=False),
-        }
+        },
+        location="querystring",
     )
     async def get(self, data):
         if data["reload"]:

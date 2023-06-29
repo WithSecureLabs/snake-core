@@ -48,9 +48,9 @@ def authenticated(
         if authentication := snake_config.get("authentication"):
             if authentication.get("scheme") == "oauth":
                 if not (value := self.request.headers.get("Authentication")):
-                    raise web.HTTPError(403)
+                    raise web.HTTPError(401)
                 if not value.startswith("Bearer "):
-                    raise web.HTTPError(403)
+                    raise web.HTTPError(401)
                 global CACHE
                 if not CACHE or CACHE["expires"] < datetime.now():
                     response = requests.get(authentication.get("openid_url")).json()
@@ -62,23 +62,26 @@ def authenticated(
                 token = value.removeprefix("Bearer ")
                 header = jwt.get_unverified_header(token)
                 if not (kid := header.get("kid")):
-                    raise web.HTTPError(403)
+                    raise web.HTTPError(401)
                 jwk = None
                 for j in CACHE.get("jwks", []):  # type: ignore
                     if j.key_id == kid:
                         jwk = j
                         break
                 if not jwk:
-                    raise web.HTTPError(403)
-                decoded = jwt.decode(
-                    token,
-                    jwk.key,
-                    algorithms=header.get("alg"),
-                    options={"verify_aud": False},
-                )
+                    raise web.HTTPError(401)
+                try:
+                    decoded = jwt.decode(
+                        token,
+                        jwk.key,
+                        algorithms=header.get("alg"),
+                        options={"verify_aud": False},
+                    )
+                except:
+                    raise web.HTTPError(401)
                 self.current_user = decoded.get("preferred_username")
                 if not self.current_user:
-                    raise web.HTTPError(403)
+                    raise web.HTTPError(401)
         return method(self, *args, **kwargs)
 
     return wrapper

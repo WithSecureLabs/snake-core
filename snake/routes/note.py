@@ -131,7 +131,8 @@ class NotesHandler(snake_handler.SnakeHandler):
     @tornadoparser.use_args(
         {
             "sha256_digest": fields.Str(required=False),
-        }
+        },
+        location="querystring",
     )
     async def get(self, data):
         documents = []
