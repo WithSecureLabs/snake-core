@@ -8,7 +8,8 @@ if [ "$1" = 'snake-pit' ]; then
   sed -i 's/address: 127.0.0.1/address: 0.0.0.0/' /etc/snake/snake.conf
 
   if [ $MONGODB_URI ]; then
-    sed -i "s/mongodb: \"mongodb:\/\/localhost:27017\"/mongodb: \"$MONGODB_URI\"/" /etc/snake/snake.conf
+    sed -i "s/mongodb: \"mongodb:\/\/localhost:27017\"//" /etc/snake/snake.conf
+    echo -e "mongodb: '$MONGODB_URI'\n" >> /etc/snake/snake.conf
   elif [ $MONGODB_ADDRESS ] && [ $MONGODB_PORT ]; then
     sed -i "s/mongodb: \"mongodb:\/\/localhost:27017\"/mongodb: \"mongodb:\/\/$MONGODB_ADDRESS:$MONGODB_PORT\"/" /etc/snake/snake.conf
   else
@@ -17,8 +18,10 @@ if [ "$1" = 'snake-pit' ]; then
   fi
 
   if [ $REDIS_URI ]; then
-    sed -i "s/backend: 'redis:\/\/localhost:6379'/backend: '$REDIS_URI'/" /etc/snake/snake.conf
-    sed -i "s/broker: 'redis:\/\/localhost:6379\/0'/broker: '$REDIS_URI'/" /etc/snake/snake.conf
+    sed -i "s/backend: 'redis:\/\/localhost:6379'//" /etc/snake/snake.conf
+    sed -i "s/broker: 'redis:\/\/localhost:6379\/0'//" /etc/snake/snake.conf
+    echo -e "backend: '$REDIS_URI'\n" >> /etc/snake/snake.conf
+    echo -e "broker: '$REDIS_URI/0'\n" >> /etc/snake/snake.conf
   elif [ $REDIS_ADDRESS ] && [ $REDIS_PORT ]; then
     sed -i "s/backend: 'redis:\/\/localhost:6379'/backend: 'redis:\/\/$REDIS_ADDRESS:$REDIS_PORT'/" /etc/snake/snake.conf
     sed -i "s/broker: 'redis:\/\/localhost:6379\/0'/broker: 'redis:\/\/$REDIS_ADDRESS:$REDIS_PORT\/0'/" /etc/snake/snake.conf
@@ -39,7 +42,7 @@ if [ "$1" = 'snake-pit' ]; then
   fi
 
   if [ $SNAKE_S3_BUCKET_NAME ]; then
-    sed -i "s/file_db: '/var/db/snake'/file_db: $SNAKE_S3_BUCKET_NAME/" /etc/snake/snake.conf
+    sed -i "s/file_db: '\/var\/db\/snake'/file_db: '$SNAKE_S3_BUCKET_NAME'/" /etc/snake/snake.conf
     sed -i "s/storage: 'file'/storage: 's3'/" /etc/snake/snake.conf
   fi
 
