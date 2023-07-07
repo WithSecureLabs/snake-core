@@ -1,5 +1,7 @@
 FROM debian:stable-slim
-RUN apt-get update; apt-get install -y git libfuzzy-dev libmagic-dev python3 python3-poetry ssdeep; rm -Rf /var/cache/apt; rm -Rf /var/lib/apt
+RUN apt-get update; apt-get install -y curl git libfuzzy-dev libmagic-dev python3 python3-poetry ssdeep; rm -Rf /var/cache/apt; rm -Rf /var/lib/apt
+RUN curl 'https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem' -o '/usr/local/share/ca-certificates/aws-global-bundle.pem'
+RUN /usr/sbin/update-ca-certificates
 RUN ln -s /usr/bin/python3 /usr/bin/python
 ADD . /tmp/snake
 RUN poetry config virtualenvs.create false

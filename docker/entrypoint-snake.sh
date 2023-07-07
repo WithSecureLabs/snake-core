@@ -21,7 +21,7 @@ if [ "$1" = 'snake' ]; then
     sed -i "s/backend: 'redis:\/\/localhost:6379'//" /etc/snake/snake.conf
     sed -i "s/broker: 'redis:\/\/localhost:6379\/0'//" /etc/snake/snake.conf
     echo -e "backend: '$REDIS_URI'\n" >> /etc/snake/snake.conf
-    echo -e "broker: '$REDIS_URI/0'\n" >> /etc/snake/snake.conf
+    echo -e "broker: '$REDIS_URI'\n" | sed -r 's/\?/\/0\?/' >> /etc/snake/snake.conf
   elif [ $REDIS_ADDRESS ] && [ $REDIS_PORT ]; then
     sed -i "s/backend: 'redis:\/\/localhost:6379'/backend: 'redis:\/\/$REDIS_ADDRESS:$REDIS_PORT'/" /etc/snake/snake.conf
     sed -i "s/broker: 'redis:\/\/localhost:6379\/0'/broker: 'redis:\/\/$REDIS_ADDRESS:$REDIS_PORT\/0'/" /etc/snake/snake.conf

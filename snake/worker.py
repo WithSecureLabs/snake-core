@@ -35,7 +35,7 @@ class CustomArgs(bootsteps.Step):
 
 
 app = Celery()  # pylint: disable=invalid-name
-app.conf.update(accept_content=["pickle"])
+app.conf.update(accept_content=["json", "pickle"])
 app.user_options["worker"].add(
     Option(
         ("--worker_config",),
