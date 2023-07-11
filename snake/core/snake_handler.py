@@ -79,7 +79,11 @@ def authenticated(
                     )
                 except:
                     raise web.HTTPError(401)
-                self.current_user = decoded.get("preferred_username")
+                self.current_user = (
+                    decoded.get("preferred_username")
+                    or decoded.get("upn")
+                    or decoded.get("email")
+                )
                 if not self.current_user:
                     raise web.HTTPError(401)
         return method(self, *args, **kwargs)
