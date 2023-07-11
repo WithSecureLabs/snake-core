@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "snake"
-version = "1.0.2"
+version = "1.1.0"
 description = "The binary store!"
 authors = ["Alex Kornitzer <alex.kornitzer@withsecure.com>"]
 license = "https://github.com/WithSecureLabs/snake-core/blob/master/LICENSE"
