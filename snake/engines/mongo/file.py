@@ -4,10 +4,9 @@ This module provides everything required to communicate with the Mongo FileColle
 """
 
 import pymongo
-from pymongo import collation
 
 
-class FileCollection():
+class FileCollection:
     """Synchronous File Collection.
 
     Attributes:
@@ -86,10 +85,12 @@ class FileCollection():
         Returns:
             :obj:`CommandSchema`: The updated file.
         """
-        return self.db.files.update_one({"sha256_digest": sha256_digest}, {'$set': data})
+        return self.db.files.update_one(
+            {"sha256_digest": sha256_digest}, {"$set": data}
+        )
 
 
-class AsyncFileCollection():
+class AsyncFileCollection:
     """Asynchronous File Collection.
 
     Attributes:
@@ -157,7 +158,9 @@ class AsyncFileCollection():
             del data[k]
         return self.db.files.find(data)
 
-    def select_all(self, filter_=None, order=pymongo.DESCENDING, sort=None, limit=0, skip=0):
+    def select_all(
+        self, filter_=None, order=pymongo.DESCENDING, sort=None, limit=0, skip=0
+    ):
         """Select all files.
 
         Args:
@@ -174,7 +177,7 @@ class AsyncFileCollection():
         else:
             documents = self.db.files.find(limit=limit, skip=skip)
         if sort:
-            documents = documents.sort([(sort, order)]).collation(collation.Collation(locale="en"))
+            documents = documents.sort([(sort, order)])
         return documents
 
     def update(self, sha256_digest, data, callback=None):
@@ -188,7 +191,9 @@ class AsyncFileCollection():
         Returns:
             :obj:`CommandSchema`: The updated file.
         """
-        future = self.db.files.update_one({"sha256_digest": sha256_digest}, {'$set': data})
+        future = self.db.files.update_one(
+            {"sha256_digest": sha256_digest}, {"$set": data}
+        )
         if callback:
             future.add_done_callback(callback)
         return future
